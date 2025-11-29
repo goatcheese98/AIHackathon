@@ -30,7 +30,7 @@ export function Layout({ children }) {
             <div className="min-h-screen bg-background text-text-main">
                 <nav className="max-w-7xl mx-auto px-6 py-6 flex justify-between items-center">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg shadow-primary/20">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-cyan-600 flex items-center justify-center shadow-lg shadow-primary/20">
                             <LayoutIcon size={20} className="text-white" />
                         </div>
                         <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-text-main to-text-secondary">
@@ -59,7 +59,7 @@ export function Layout({ children }) {
             {/* Sidebar */}
             <aside className="w-64 border-r border-border p-6 flex flex-col gap-8 fixed h-full glass-panel m-4 rounded-2xl z-10">
                 <Link to="/" className="flex items-center gap-3 px-2 hover:opacity-80 transition-opacity">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-md shadow-primary/20">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-cyan-600 flex items-center justify-center shadow-md shadow-primary/20">
                         <LayoutIcon size={18} className="text-white" />
                     </div>
                     <h1 className="text-xl font-bold text-text-main">
@@ -103,7 +103,7 @@ export function Layout({ children }) {
                         <span className="font-medium">{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
                     </button>
 
-                    <div className="px-4 py-3 rounded-xl bg-gradient-to-br from-primary/5 to-purple-500/5 border border-primary/10">
+                    <div className="px-4 py-3 rounded-xl bg-gradient-to-br from-primary/5 to-cyan-500/5 border border-primary/10">
                         <p className="text-xs text-text-secondary mb-1">Pro Plan</p>
                         <p className="text-sm font-medium text-text-main">Hackathon Team</p>
                     </div>

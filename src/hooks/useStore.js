@@ -13,6 +13,7 @@ const INITIAL_DATA = {
             tags: ['ux', 'wireframe', 'design'],
             platform: 'ChatGPT',
             folderId: 'ux',
+            color: 'purple',
             createdAt: new Date().toISOString(),
         },
         {
@@ -33,6 +34,7 @@ const INITIAL_DATA = {
             tags: ['sql', 'analytics'],
             platform: 'ChatGPT',
             folderId: 'data-analytics',
+            color: 'blue',
             createdAt: new Date().toISOString(),
         },
         {
@@ -133,6 +135,7 @@ const INITIAL_DATA = {
             tags: ['marketing', 'campaigns', 'planning'],
             platform: 'ChatGPT',
             folderId: 'marketing',
+            color: 'pink',
             createdAt: new Date().toISOString(),
         },
         {

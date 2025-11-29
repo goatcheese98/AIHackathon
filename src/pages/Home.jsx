@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { cn } from '../utils/cn';
 import { ArrowRight, Zap, Layers, BarChart3, Code, Share2, Sparkles } from 'lucide-react';
 import { HeroHighlight, Highlight } from '../components/ui/hero-highlight';
 import { BentoGrid, BentoGridItem } from '../components/ui/bento-grid';
@@ -25,7 +26,7 @@ export function Home() {
                     <h1 className="text-5xl md:text-7xl font-bold text-text-main mb-6 tracking-tight leading-tight">
                         Master Your <Highlight className="text-white">Prompts</Highlight>.
                         <br />
-                        Maximize Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-600">Impact</span>.
+                        Maximize Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500 dark:from-blue-400 dark:to-cyan-300">Impact</span>.
                     </h1>
                     <p className="text-xl text-text-secondary mb-10 max-w-2xl mx-auto leading-relaxed">
                         Organize, template, and compare your AI prompts in one beautiful workspace.
@@ -98,39 +99,71 @@ export function Home() {
     );
 }
 
-const Skeleton = () => (
-    <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-neutral-900 to-neutral-800 border border-white/10"></div>
+const Skeleton = ({ children, className }) => (
+    <div className={cn("flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 border border-transparent dark:border-white/[0.1]", className)}>
+        {children}
+    </div>
 );
 
 const features = [
     {
         title: "Smart Library",
         description: "Organize prompts with tags and platforms. Never lose a winning prompt again.",
-        header: <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-white/10 items-center justify-center"><Layers className="w-10 h-10 text-blue-400" /></div>,
+        header: (
+            <Skeleton className="flex flex-col gap-2 p-4">
+                <div className="h-2 w-1/2 bg-gray-300 dark:bg-gray-700 rounded-full" />
+                <div className="h-2 w-full bg-gray-200 dark:bg-gray-800 rounded-full" />
+                <div className="h-2 w-full bg-gray-200 dark:bg-gray-800 rounded-full" />
+                <div className="h-2 w-3/4 bg-gray-200 dark:bg-gray-800 rounded-full" />
+            </Skeleton>
+        ),
         icon: <Layers className="h-4 w-4 text-neutral-500" />,
     },
     {
         title: "Dynamic Templates",
         description: "Create reusable templates with {{variables}}. Fill them out instantly for any use case.",
-        header: <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-white/10 items-center justify-center"><Zap className="w-10 h-10 text-emerald-400" /></div>,
+        header: (
+            <Skeleton className="flex items-center justify-center">
+                <div className="px-4 py-2 rounded-lg bg-emerald-500/10 text-emerald-500 text-xs font-mono border border-emerald-500/20">
+                    {"{{ user_persona }}"}
+                </div>
+            </Skeleton>
+        ),
         icon: <Zap className="h-4 w-4 text-neutral-500" />,
     },
     {
         title: "The Arena",
         description: "Run prompts against ChatGPT, Claude, and Gemini side-by-side. Rate and log the winner.",
-        header: <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-white/10 items-center justify-center"><BarChart3 className="w-10 h-10 text-orange-400" /></div>,
+        header: (
+            <Skeleton className="grid grid-cols-2 gap-2 p-2">
+                <div className="bg-orange-500/10 rounded-lg h-full w-full border border-orange-500/20" />
+                <div className="bg-blue-500/10 rounded-lg h-full w-full border border-blue-500/20" />
+            </Skeleton>
+        ),
         icon: <BarChart3 className="h-4 w-4 text-neutral-500" />,
     },
     {
         title: "API Integration",
         description: "Connect your own API keys to run prompts directly within the platform. Secure and local.",
-        header: <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-pink-500/20 to-rose-500/20 border border-white/10 items-center justify-center"><Code className="w-10 h-10 text-pink-400" /></div>,
+        header: (
+            <Skeleton className="flex items-center justify-center">
+                <div className="flex gap-2">
+                    <div className="w-2 h-2 rounded-full bg-red-500" />
+                    <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                </div>
+            </Skeleton>
+        ),
         icon: <Code className="h-4 w-4 text-neutral-500" />,
     },
     {
         title: "Share & Collaborate",
         description: "Export your prompts to JSON or Markdown. Share with your team easily.",
-        header: <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-violet-500/20 to-indigo-500/20 border border-white/10 items-center justify-center"><Share2 className="w-10 h-10 text-violet-400" /></div>,
+        header: (
+            <Skeleton className="flex items-center justify-center text-cyan-500">
+                <Share2 size={32} className="opacity-50" />
+            </Skeleton>
+        ),
         icon: <Share2 className="h-4 w-4 text-neutral-500" />,
     },
 ];

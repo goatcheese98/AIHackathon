@@ -8,12 +8,12 @@
   --color-text-secondary: var(--text-secondary);
   --color-border: var(--border);
 
-  --color-primary: #6366f1;
-  /* Indigo 500 */
-  --color-primary-hover: #4f46e5;
-  /* Indigo 600 */
-  --color-primary-light: #e0e7ff;
-  /* Indigo 100 */
+  --color-primary: #3b82f6;
+  /* Blue 500 */
+  --color-primary-hover: #2563eb;
+  /* Blue 600 */
+  --color-primary-light: #dbeafe;
+  /* Blue 100 */
 
   --font-sans: 'Inter', sans-serif;
 
@@ -75,4 +75,16 @@
 
 .btn-primary {
   @apply bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-lg font-medium shadow-lg shadow-primary/30 transition-all duration-200 active:scale-95;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-border rounded-full hover:bg-text-secondary transition-colors;
 }
