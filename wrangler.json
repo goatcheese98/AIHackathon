@@ -1,0 +1,9 @@
+{
+    "name": "prompt-folio",
+    "compatibility_date": "2024-09-23",
+    "assets": {
+        "binding": "ASSETS",
+        "directory": "./dist"
+    },
+    "main": "src/worker.js"
+}

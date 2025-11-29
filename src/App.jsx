@@ -11,7 +11,7 @@ import { Settings } from './pages/Settings';
 function App() {
   return (
     <ThemeProvider>
-      <BrowserRouter basename="/AIHackathon">
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
         <Layout>
           <Routes>
             <Route path="/" element={<Home />} />
