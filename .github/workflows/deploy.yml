@@ -31,7 +31,7 @@ jobs:
         run: npm ci
 
       - name: Build
-        run: npm run build
+        run: npm run build -- --mode github
         env:
           GITHUB_PAGES: true
 
@@ -39,6 +39,9 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
+
+      - name: Copy index.html to 404.html
+        run: cp dist/index.html dist/404.html
 
   deploy:
     environment:
