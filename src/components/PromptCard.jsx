@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Edit2, Play, Trash2, Copy, FileText, Palette } from 'lucide-react';
+import { Edit2, Play, Trash2, Copy, FileText } from 'lucide-react';
 import { clsx } from 'clsx';
 
 const COLORS = [
@@ -123,12 +123,37 @@ export function PromptCard({ prompt, onDelete, onUpdate }) {
         )}>
             <div className="flex justify-between items-start mb-4">
                 <div className="flex items-start gap-3">
-                    <div className={clsx(
-                        "mt-1 p-2 rounded-lg",
-                        activeColor.accentBg,
-                        activeColor.accentText
-                    )}>
-                        <FileText size={18} />
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowColors(!showColors)}
+                            className={clsx(
+                                "mt-1 p-2 rounded-lg transition-transform hover:scale-105",
+                                activeColor.accentBg,
+                                activeColor.accentText
+                            )}
+                        >
+                            <FileText size={18} />
+                        </button>
+                        {showColors && (
+                            <div className="absolute top-full left-0 mt-2 p-2 bg-surface border border-border rounded-xl shadow-xl grid grid-cols-4 gap-2 z-50 animate-in fade-in slide-in-from-top-2 w-48">
+                                {COLORS.map(color => (
+                                    <button
+                                        key={color.name}
+                                        onClick={() => {
+                                            onUpdate(prompt.id, { color: color.name });
+                                            setShowColors(false);
+                                        }}
+                                        className={clsx(
+                                            "w-6 h-6 rounded-full border transition-transform hover:scale-110",
+                                            color.pickerBg,
+                                            color.pickerBorder,
+                                            prompt.color === color.name && "ring-2 ring-offset-2 ring-text-main"
+                                        )}
+                                        title={color.name}
+                                    />
+                                ))}
+                            </div>
+                        )}
                     </div>
                     <div>
                         <h3 className="text-lg font-bold text-text-main mb-1">{prompt.title}</h3>
@@ -172,39 +197,7 @@ export function PromptCard({ prompt, onDelete, onUpdate }) {
                     <Copy size={16} />
                 </button>
 
-                <div className="relative">
-                    <button
-                        onClick={() => setShowColors(!showColors)}
-                        className={clsx(
-                            "p-2 rounded-lg hover:bg-surface-highlight transition-colors",
-                            showColors ? "text-text-main bg-surface-highlight" : "text-text-secondary hover:text-text-main"
-                        )}
-                        title="Color Code"
-                    >
-                        <Palette size={16} />
-                    </button>
 
-                    {showColors && (
-                        <div className="absolute bottom-full left-0 mb-2 p-2 bg-surface border border-border rounded-xl shadow-xl grid grid-cols-4 gap-2 z-50 animate-in fade-in slide-in-from-bottom-2 w-48">
-                            {COLORS.map(color => (
-                                <button
-                                    key={color.name}
-                                    onClick={() => {
-                                        onUpdate(prompt.id, { color: color.name });
-                                        setShowColors(false);
-                                    }}
-                                    className={clsx(
-                                        "w-6 h-6 rounded-full border transition-transform hover:scale-110",
-                                        color.pickerBg,
-                                        color.pickerBorder,
-                                        prompt.color === color.name && "ring-2 ring-offset-2 ring-text-main"
-                                    )}
-                                    title={color.name}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </div>
 
                 <button
                     onClick={() => onDelete(prompt.id)}
