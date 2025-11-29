@@ -206,8 +206,13 @@ const INITIAL_DATA = {
 
 export function useStore() {
     const [data, setData] = useState(() => {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        return saved ? JSON.parse(saved) : INITIAL_DATA;
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            return saved ? JSON.parse(saved) : INITIAL_DATA;
+        } catch (error) {
+            console.error('Failed to parse local storage data:', error);
+            return INITIAL_DATA;
+        }
     });
 
     useEffect(() => {

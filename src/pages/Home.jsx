@@ -5,6 +5,7 @@ import { HeroHighlight, Highlight } from '../components/ui/hero-highlight';
 import { BentoGrid, BentoGridItem } from '../components/ui/bento-grid';
 import { InfiniteMovingCards } from '../components/ui/infinite-moving-cards';
 import { Spotlight } from '../components/ui/spotlight';
+import { Ripple } from '../components/ui/ripple';
 
 export function Home() {
     return (
@@ -15,7 +16,8 @@ export function Home() {
             />
 
             {/* Hero Section */}
-            <HeroHighlight containerClassName="h-[40rem] md:h-[50rem]">
+            <HeroHighlight containerClassName="h-[40rem] md:h-[50rem] relative">
+                <Ripple className="opacity-50" />
                 <div className="text-center max-w-4xl mx-auto px-4 relative z-20">
                     <div className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6 border border-primary/20 backdrop-blur-sm">
                         The Ultimate Tool for Prompt Engineers
