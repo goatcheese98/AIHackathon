@@ -5,7 +5,7 @@ import { Save, Key, ShieldCheck } from 'lucide-react';
 
 
 export function Settings() {
-    const { apiKeys, setApiKeys } = useStore();
+    const { apiKeys, setApiKeys, resetData } = useStore();
     const [keys, setKeys] = useState(apiKeys);
     const [saved, setSaved] = useState(false);
 
@@ -138,6 +138,29 @@ export function Settings() {
                         )}
                     </div>
                 </form>
+            </div>
+
+            <div className="glass-panel p-8 mt-8 border-red-500/20">
+                <div className="flex items-center gap-3 mb-6 text-red-500">
+                    <ShieldCheck size={24} />
+                    <h2 className="text-xl font-semibold">Danger Zone</h2>
+                </div>
+
+                <p className="text-sm text-text-secondary mb-6">
+                    Resetting your data will remove all your custom prompts, folders, and runs. This action cannot be undone.
+                </p>
+
+                <button
+                    onClick={() => {
+                        if (window.confirm('Are you sure you want to reset all data to the default mock data? This cannot be undone.')) {
+                            resetData();
+                            alert('Data reset to defaults!');
+                        }
+                    }}
+                    className="px-4 py-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors text-sm font-medium border border-red-500/20"
+                >
+                    Reset to Mock Data
+                </button>
             </div>
         </div>
     );

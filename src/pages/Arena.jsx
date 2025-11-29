@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useStore } from '../hooks/useStore';
 import { AIService } from '../services/ai';
-import { Copy, Star, Save, Check, Play, Settings, Loader2 } from 'lucide-react';
+import { Copy, Star, Save, Check, Play, Settings, Loader2, Plus, X, ExternalLink } from 'lucide-react';
 import { clsx } from 'clsx';
+import { v4 as uuidv4 } from 'uuid';
 
 export function Arena() {
     const [searchParams] = useSearchParams();
@@ -11,10 +12,13 @@ export function Arena() {
 
     const [selectedPromptId, setSelectedPromptId] = useState(searchParams.get('prompt') || '');
     const [variables, setVariables] = useState({});
-    const [outputs, setOutputs] = useState({
-        modelA: { name: 'ChatGPT', content: '', rating: 0, loading: false, error: null },
-        modelB: { name: 'Claude', content: '', rating: 0, loading: false, error: null }
-    });
+
+    // Dynamic outputs state: Array of model objects
+    const [outputs, setOutputs] = useState([
+        { id: '1', name: 'ChatGPT', content: '', rating: 0, loading: false, error: null },
+        { id: '2', name: 'Claude', content: '', rating: 0, loading: false, error: null }
+    ]);
+
     const [copied, setCopied] = useState(false);
 
     const selectedPrompt = prompts.find(p => p.id === selectedPromptId);
@@ -25,19 +29,14 @@ export function Arena() {
     useEffect(() => {
         if (selectedPromptId) {
             setVariables({});
-            setOutputs({
-                modelA: { name: 'ChatGPT', content: '', rating: 0, loading: false, error: null },
-                modelB: { name: 'Claude', content: '', rating: 0, loading: false, error: null }
-            });
+            // Reset outputs content but keep configuration
+            setOutputs(prev => prev.map(o => ({ ...o, content: '', rating: 0, loading: false, error: null })));
         }
     }, [selectedPromptId]);
 
     const renderCompiledPrompt = () => {
         if (!selectedPrompt) return null;
-
-        // Split by variables {{var}}
         const parts = selectedPrompt.content.split(/(\{\{[^}]+\}\})/g);
-
         return (
             <div className="whitespace-pre-wrap font-mono text-sm text-text-main leading-relaxed">
                 {parts.map((part, index) => {
@@ -46,17 +45,8 @@ export function Arena() {
                         const variable = match[1].trim();
                         const value = variables[variable];
                         const hasValue = value && value.trim().length > 0;
-
                         return (
-                            <span
-                                key={index}
-                                className={clsx(
-                                    "transition-all duration-300 rounded px-1 py-0.5 mx-0.5 font-bold",
-                                    hasValue
-                                        ? "text-primary bg-primary/10 shadow-[0_0_10px_rgba(99,102,241,0.3)] border border-primary/20"
-                                        : "text-text-secondary bg-surface-highlight border border-border border-dashed"
-                                )}
-                            >
+                            <span key={index} className={clsx("transition-all duration-300 rounded px-1 py-0.5 mx-0.5 font-bold", hasValue ? "text-primary bg-primary/10 shadow-[0_0_10px_rgba(99,102,241,0.3)] border border-primary/20" : "text-text-secondary bg-surface-highlight border border-border border-dashed")}>
                                 {hasValue ? value : variable}
                             </span>
                         );
@@ -82,16 +72,17 @@ export function Arena() {
         setTimeout(() => setCopied(false), 2000);
     };
 
-    const handleRunAPI = async (modelKey) => {
-        const modelName = outputs[modelKey].name;
-        const prompt = getRawCompiledPrompt();
+    const handleRunAPI = async (id) => {
+        const modelIndex = outputs.findIndex(o => o.id === id);
+        if (modelIndex === -1) return;
 
+        const modelName = outputs[modelIndex].name;
+        const prompt = getRawCompiledPrompt();
         if (!prompt) return;
 
-        setOutputs(prev => ({
-            ...prev,
-            [modelKey]: { ...prev[modelKey], loading: true, error: null }
-        }));
+        const newOutputs = [...outputs];
+        newOutputs[modelIndex] = { ...newOutputs[modelIndex], loading: true, error: null };
+        setOutputs(newOutputs);
 
         try {
             let apiKey = '';
@@ -101,16 +92,35 @@ export function Arena() {
 
             const result = await AIService.run(modelName, apiKey, prompt);
 
-            setOutputs(prev => ({
-                ...prev,
-                [modelKey]: { ...prev[modelKey], content: result, loading: false }
-            }));
+            setOutputs(prev => prev.map(o => o.id === id ? { ...o, content: result, loading: false } : o));
         } catch (error) {
-            setOutputs(prev => ({
-                ...prev,
-                [modelKey]: { ...prev[modelKey], error: error.message, loading: false }
-            }));
+            setOutputs(prev => prev.map(o => o.id === id ? { ...o, error: error.message, loading: false } : o));
         }
+    };
+
+    const handleOpenExternal = (id) => {
+        const modelName = outputs.find(o => o.id === id)?.name.toLowerCase();
+        handleCopy(); // Copy prompt first
+
+        let url = 'https://chat.openai.com';
+        if (modelName.includes('claude')) url = 'https://claude.ai';
+        else if (modelName.includes('gemini')) url = 'https://gemini.google.com';
+
+        window.open(url, '_blank');
+    };
+
+    const addModelColumn = () => {
+        setOutputs(prev => [...prev, { id: uuidv4(), name: 'ChatGPT', content: '', rating: 0, loading: false, error: null }]);
+    };
+
+    const removeModelColumn = (id) => {
+        if (outputs.length > 1) {
+            setOutputs(prev => prev.filter(o => o.id !== id));
+        }
+    };
+
+    const updateModelOutput = (id, field, value) => {
+        setOutputs(prev => prev.map(o => o.id === id ? { ...o, [field]: value } : o));
     };
 
     const handleSave = () => {
@@ -118,10 +128,7 @@ export function Arena() {
             promptId: selectedPromptId,
             promptTitle: selectedPrompt.title,
             variables,
-            outputs: {
-                modelA: { ...outputs.modelA, loading: undefined, error: undefined },
-                modelB: { ...outputs.modelB, loading: undefined, error: undefined }
-            },
+            outputs: outputs.map(({ loading, error, ...rest }) => rest),
             timestamp: new Date().toISOString()
         });
         alert('Run saved to history!');
@@ -134,9 +141,14 @@ export function Arena() {
                     <h1 className="text-3xl font-bold text-text-main mb-2">The Arena</h1>
                     <p className="text-text-secondary">Test, compare, and rate model performance.</p>
                 </div>
-                <Link to="/settings" className="glass-button flex items-center gap-2 text-sm">
-                    <Settings size={16} /> Configure Keys
-                </Link>
+                <div className="flex gap-3">
+                    <button onClick={addModelColumn} className="glass-button flex items-center gap-2 text-sm text-primary border-primary/20 bg-primary/5">
+                        <Plus size={16} /> Add Model
+                    </button>
+                    <Link to="/settings" className="glass-button flex items-center gap-2 text-sm">
+                        <Settings size={16} /> Configure Keys
+                    </Link>
+                </div>
             </header>
 
             {/* Configuration Panel */}
@@ -190,53 +202,54 @@ export function Arena() {
 
             {/* Comparison Panel */}
             {selectedPrompt && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {['modelA', 'modelB'].map((modelKey) => (
-                        <div key={modelKey} className="glass-panel p-6 flex flex-col h-full relative overflow-hidden">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 overflow-x-auto pb-4">
+                    {outputs.map((output) => (
+                        <div key={output.id} className="glass-panel p-6 flex flex-col h-full relative overflow-hidden min-w-[300px]">
                             <div className="flex justify-between items-center mb-4">
                                 <select
-                                    value={outputs[modelKey].name}
-                                    onChange={(e) => setOutputs(prev => ({
-                                        ...prev,
-                                        [modelKey]: { ...prev[modelKey], name: e.target.value }
-                                    }))}
-                                    className="bg-transparent text-lg font-bold text-text-main focus:outline-none cursor-pointer hover:text-primary transition-colors"
+                                    value={output.name}
+                                    onChange={(e) => updateModelOutput(output.id, 'name', e.target.value)}
+                                    className="bg-transparent text-lg font-bold text-text-main focus:outline-none cursor-pointer hover:text-primary transition-colors max-w-[120px]"
                                 >
                                     <option value="ChatGPT">ChatGPT</option>
                                     <option value="Claude">Claude</option>
                                     <option value="Gemini">Gemini</option>
                                 </select>
-                                <div className="flex gap-1">
-                                    {[1, 2, 3, 4, 5].map((star) => (
-                                        <button
-                                            key={star}
-                                            onClick={() => setOutputs(prev => ({
-                                                ...prev,
-                                                [modelKey]: { ...prev[modelKey], rating: star }
-                                            }))}
-                                            className={clsx(
-                                                "transition-colors",
-                                                outputs[modelKey].rating >= star ? "text-yellow-400" : "text-gray-300 hover:text-yellow-400/50"
-                                            )}
-                                        >
-                                            <Star size={16} fill={outputs[modelKey].rating >= star ? "currentColor" : "none"} />
-                                        </button>
-                                    ))}
+
+                                <div className="flex items-center gap-2">
+                                    <div className="flex gap-0.5">
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                            <button
+                                                key={star}
+                                                onClick={() => updateModelOutput(output.id, 'rating', star)}
+                                                className={clsx(
+                                                    "transition-colors",
+                                                    output.rating >= star ? "text-yellow-400" : "text-gray-300 hover:text-yellow-400/50"
+                                                )}
+                                            >
+                                                <Star size={14} fill={output.rating >= star ? "currentColor" : "none"} />
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <button
+                                        onClick={() => removeModelColumn(output.id)}
+                                        className="text-text-secondary hover:text-red-500 transition-colors ml-2"
+                                        title="Remove column"
+                                    >
+                                        <X size={16} />
+                                    </button>
                                 </div>
                             </div>
 
                             <div className="relative flex-1">
                                 <textarea
-                                    value={outputs[modelKey].content}
-                                    onChange={(e) => setOutputs(prev => ({
-                                        ...prev,
-                                        [modelKey]: { ...prev[modelKey], content: e.target.value }
-                                    }))}
+                                    value={output.content}
+                                    onChange={(e) => updateModelOutput(output.id, 'content', e.target.value)}
                                     className="glass-input h-full min-h-[300px] font-mono text-sm resize-none p-4"
-                                    placeholder={`Paste ${outputs[modelKey].name} output here or click Run...`}
+                                    placeholder={`Paste ${output.name} output here or click Run...`}
                                 />
 
-                                {outputs[modelKey].loading && (
+                                {output.loading && (
                                     <div className="absolute inset-0 bg-surface/80 backdrop-blur-sm flex items-center justify-center rounded-lg border border-border">
                                         <div className="flex flex-col items-center gap-2 text-primary">
                                             <Loader2 size={32} className="animate-spin" />
@@ -245,25 +258,40 @@ export function Arena() {
                                     </div>
                                 )}
 
-                                {outputs[modelKey].error && (
+                                {output.error && (
                                     <div className="absolute inset-x-0 bottom-0 bg-red-500/10 border-t border-red-500/20 p-3 text-xs text-red-500">
-                                        {outputs[modelKey].error}
+                                        {output.error}
                                     </div>
                                 )}
                             </div>
 
-                            <div className="mt-4 flex justify-end">
+                            <div className="mt-4 flex gap-2">
                                 <button
-                                    onClick={() => handleRunAPI(modelKey)}
-                                    disabled={outputs[modelKey].loading}
-                                    className="glass-button flex items-center gap-2 text-sm hover:text-primary hover:border-primary/30"
+                                    onClick={() => handleRunAPI(output.id)}
+                                    disabled={output.loading}
+                                    className="glass-button flex-1 flex items-center justify-center gap-2 text-sm hover:text-primary hover:border-primary/30"
                                 >
                                     <Play size={14} />
-                                    Run {outputs[modelKey].name}
+                                    Run API
+                                </button>
+                                <button
+                                    onClick={() => handleOpenExternal(output.id)}
+                                    className="glass-button flex items-center justify-center gap-2 text-sm hover:text-primary hover:border-primary/30 px-3"
+                                    title={`Open ${output.name} (Copies prompt)`}
+                                >
+                                    <ExternalLink size={14} />
                                 </button>
                             </div>
                         </div>
                     ))}
+
+                    <button
+                        onClick={addModelColumn}
+                        className="glass-panel min-h-[400px] flex flex-col items-center justify-center text-text-secondary hover:text-primary hover:bg-surface-highlight transition-all cursor-pointer border-dashed min-w-[300px]"
+                    >
+                        <Plus size={48} className="mb-4 opacity-50" />
+                        <span className="font-medium">Add Another Model</span>
+                    </button>
                 </div>
             )}
 

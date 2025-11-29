@@ -6,7 +6,7 @@ import { Save, ArrowLeft, Plus, X, Type } from 'lucide-react';
 export function Editor() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { prompts, addPrompt, updatePrompt } = useStore();
+    const { prompts, folders, addPrompt, updatePrompt } = useStore();
 
     const [formData, setFormData] = useState({
         title: '',
@@ -95,6 +95,19 @@ export function Editor() {
                                 <option value="Claude">Claude</option>
                                 <option value="Gemini">Gemini</option>
                                 <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-text-secondary">Folder</label>
+                            <select
+                                value={formData.folderId || ''}
+                                onChange={e => setFormData({ ...formData, folderId: e.target.value })}
+                                className="glass-input appearance-none"
+                            >
+                                <option value="">Uncategorized</option>
+                                {folders?.map(f => (
+                                    <option key={f.id} value={f.id}>{f.name}</option>
+                                ))}
                             </select>
                         </div>
                     </div>
