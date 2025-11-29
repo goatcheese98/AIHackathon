@@ -11,6 +11,7 @@ export default {
     extend: {
       colors: {
         background: '#0f172a', // Slate 900
+        foreground: '#ffffff', // White
         surface: '#1e293b', // Slate 800
         primary: '#3b82f6', // Blue 500
         secondary: '#64748b', // Slate 500
