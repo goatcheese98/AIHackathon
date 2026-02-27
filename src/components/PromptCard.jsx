@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Edit2, Play, Trash2, Copy, FileText } from 'lucide-react';
+import { Edit2, Play, Trash2, Copy, FileText, Check, Download } from 'lucide-react';
 import { clsx } from 'clsx';
+import { exportSinglePrompt } from '../utils/export';
 
 const COLORS = [
     {
@@ -107,10 +108,19 @@ const COLORS = [
 
 export function PromptCard({ prompt, onDelete, onUpdate }) {
     const [showColors, setShowColors] = useState(false);
+    const [copied, setCopied] = useState(false);
+    const [showExport, setShowExport] = useState(false);
 
     const handleCopy = (e) => {
         e.preventDefault();
         navigator.clipboard.writeText(prompt.content);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    const handleExport = (format) => {
+        exportSinglePrompt(prompt, format);
+        setShowExport(false);
     };
 
     const activeColor = COLORS.find(c => c.name === prompt.color) || COLORS[0];
@@ -122,12 +132,12 @@ export function PromptCard({ prompt, onDelete, onUpdate }) {
             activeColor.name !== 'default' && activeColor.cardBg
         )}>
             <div className="flex justify-between items-start mb-4">
-                <div className="flex items-start gap-3">
-                    <div className="relative">
+                <div className="flex items-start gap-3 min-w-0 flex-1">
+                    <div className="relative flex-shrink-0">
                         <button
                             onClick={() => setShowColors(!showColors)}
                             className={clsx(
-                                "mt-1 p-2 rounded-lg transition-transform hover:scale-105",
+                                "p-2 rounded-lg transition-transform hover:scale-105",
                                 activeColor.accentBg,
                                 activeColor.accentText
                             )}
@@ -155,21 +165,26 @@ export function PromptCard({ prompt, onDelete, onUpdate }) {
                             </div>
                         )}
                     </div>
-                    <div>
-                        <h3 className="text-lg font-bold text-text-main mb-1">{prompt.title}</h3>
+                    <div className="min-w-0 flex-1">
+                        <h3 className="text-lg font-bold text-text-main mb-1 truncate">{prompt.title}</h3>
                         <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-xs font-medium text-text-secondary">
+                            <span className="text-xs font-medium text-text-secondary flex-shrink-0">
                                 {prompt.platform}
                             </span>
-                            {prompt.tags.map(tag => (
+                            {prompt.tags?.slice(0, 3).map(tag => (
                                 <span key={tag} className={clsx(
-                                    "text-xs px-2 py-0.5 rounded-full font-medium",
+                                    "text-xs px-2 py-0.5 rounded-full font-medium truncate max-w-[80px]",
                                     activeColor.accentBg,
                                     activeColor.accentText
                                 )}>
                                     {tag}
                                 </span>
                             ))}
+                            {prompt.tags?.length > 3 && (
+                                <span className="text-xs text-text-secondary">
+                                    +{prompt.tags.length - 3}
+                                </span>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -191,11 +206,41 @@ export function PromptCard({ prompt, onDelete, onUpdate }) {
                 </Link>
                 <button
                     onClick={handleCopy}
-                    className="p-2 rounded-lg hover:bg-surface-highlight text-text-secondary hover:text-text-main transition-colors"
-                    title="Copy raw prompt"
+                    className={clsx(
+                        "p-2 rounded-lg hover:bg-surface-highlight transition-colors",
+                        copied ? "text-emerald-500" : "text-text-secondary hover:text-text-main"
+                    )}
+                    title={copied ? "Copied!" : "Copy raw prompt"}
+                    aria-label="Copy prompt content"
                 >
-                    <Copy size={16} />
+                    {copied ? <Check size={16} /> : <Copy size={16} />}
                 </button>
+                <div className="relative">
+                    <button
+                        onClick={() => setShowExport(!showExport)}
+                        className="p-2 rounded-lg hover:bg-surface-highlight text-text-secondary hover:text-text-main transition-colors"
+                        title="Export prompt"
+                        aria-label="Export prompt"
+                    >
+                        <Download size={16} />
+                    </button>
+                    {showExport && (
+                        <div className="absolute bottom-full left-0 mb-2 bg-surface border border-border rounded-lg shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2">
+                            <button
+                                onClick={() => handleExport('markdown')}
+                                className="w-full px-4 py-2 text-sm text-left hover:bg-surface-highlight transition-colors whitespace-nowrap"
+                            >
+                                Export as Markdown
+                            </button>
+                            <button
+                                onClick={() => handleExport('json')}
+                                className="w-full px-4 py-2 text-sm text-left hover:bg-surface-highlight transition-colors whitespace-nowrap"
+                            >
+                                Export as JSON
+                            </button>
+                        </div>
+                    )}
+                </div>
 
 
 

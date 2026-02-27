@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -73,6 +74,14 @@
   @apply placeholder-text-secondary/50 transition-all duration-200;
 }
 
+.glass-input-with-icon {
+  @apply bg-surface-highlight border border-border rounded-lg py-2 w-full text-text-main;
+  @apply focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary;
+  @apply placeholder-text-secondary/50 transition-all duration-200;
+  padding-left: 2.75rem;
+  padding-right: 1rem;
+}
+
 .btn-primary {
   @apply bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-lg font-medium shadow-lg shadow-primary/30 transition-all duration-200 active:scale-95;
 }
@@ -87,4 +96,129 @@
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
   @apply bg-border rounded-full hover:bg-text-secondary transition-colors;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.animate-slide-in-top {
+  animation: slideInFromTop 0.2s ease-out;
+}
+
+.animate-slide-in-bottom {
+  animation: slideInFromBottom 0.2s ease-out;
+}
+
+/* Focus visible styles for accessibility */
+:focus-visible {
+  @apply outline-2 outline-offset-2 outline-primary;
+}
+
+/* Skip to main content link for accessibility */
+.skip-link {
+  @apply absolute left-0 top-0 bg-primary text-white px-4 py-2 z-[1000] transform -translate-y-full;
+  @apply focus:translate-y-0 transition-transform;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .glass-panel {
+    @apply border-2;
+  }
+
+  .btn-primary {
+    @apply border-2 border-white;
+  }
+}
+
+.landing-display {
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: -0.03em;
+}
+
+.landing-mono {
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.landing-grid-bg {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--border) 60%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--border) 60%, transparent) 1px, transparent 1px);
+  background-size: 52px 52px;
+  mask-image: radial-gradient(circle at top, black 45%, transparent 85%);
+  opacity: var(--grid-opacity, 0.6);
+  transform: translate3d(var(--grid-shift-x, 0px), var(--grid-shift-y, 0px), 0) scale(var(--grid-scale, 1));
+  transform-origin: center;
+  transition: transform 180ms ease-out, opacity 220ms ease-out;
+}
+
+.landing-grid-reactive {
+  background:
+    radial-gradient(
+      280px circle at var(--mx, 50%) var(--my, 20%),
+      color-mix(in oklab, #22d3ee 35%, transparent) 0%,
+      color-mix(in oklab, #0ea5e9 25%, transparent) 35%,
+      transparent 72%
+    );
+  mix-blend-mode: screen;
+  opacity: 0.48;
+  transition: background 120ms linear;
+}
+
+.dark .landing-grid-reactive {
+  opacity: 0.62;
+}
+
+@keyframes landingFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+.landing-float {
+  animation: landingFloat 8s ease-in-out infinite;
 }

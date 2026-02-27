@@ -1,129 +1,177 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../hooks/useStore';
 import { AIService } from '../services/ai';
-import { Save, Key, ShieldCheck } from 'lucide-react';
+import { useToast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
+import { exportToJSON, exportToMarkdown } from '../utils/export';
+import { DEFAULT_MODELS, PROVIDER_LABELS } from '../data/models';
+import {
+    Save,
+    Key,
+    ShieldCheck,
+    Download,
+    FileJson,
+    FileText,
+    Eye,
+    EyeOff,
+    RefreshCw,
+    Shuffle,
+    Route
+} from 'lucide-react';
 
+const PROVIDERS = [
+    {
+        id: 'openrouter',
+        label: 'OpenRouter API Key',
+        placeholder: 'sk-or-...'
+    },
+    {
+        id: 'openai',
+        label: 'OpenAI API Key',
+        placeholder: 'sk-...'
+    },
+    {
+        id: 'anthropic',
+        label: 'Anthropic API Key',
+        placeholder: 'sk-ant-...'
+    },
+    {
+        id: 'gemini',
+        label: 'Gemini API Key',
+        placeholder: 'AIza...'
+    }
+];
 
 export function Settings() {
-    const { apiKeys, setApiKeys, resetData } = useStore();
-    const [keys, setKeys] = useState(apiKeys);
-    const [saved, setSaved] = useState(false);
+    const { apiKeys, setApiKeys, resetData, prompts, folders } = useStore();
+    const toast = useToast();
+    const confirm = useConfirm();
 
+    const [keys, setKeys] = useState(apiKeys);
+    const [showKeys, setShowKeys] = useState({
+        openrouter: false,
+        openai: false,
+        anthropic: false,
+        gemini: false
+    });
     const [testing, setTesting] = useState(null);
 
     useEffect(() => {
         setKeys(apiKeys);
     }, [apiKeys]);
 
-    const handleSave = (e) => {
-        e.preventDefault();
+    const handleSave = (event) => {
+        event.preventDefault();
         setApiKeys(keys);
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
+        toast.success('Settings saved successfully');
     };
 
-    const handleTest = async (provider, key) => {
+    const handleTest = async (providerId, key) => {
         if (!key) return;
-        setTesting(provider);
+
+        setTesting(providerId);
         try {
-            // Simple test prompt
-            await AIService.run(provider, key, "Hello");
-            alert(`${provider} key is working!`);
+            await AIService.run({
+                provider: providerId,
+                apiKey: key,
+                model: DEFAULT_MODELS[providerId],
+                prompt: 'Reply with: API connection successful.'
+            });
+            toast.success(`${PROVIDER_LABELS[providerId]} key is working!`, 'API Test');
         } catch (error) {
-            alert(`Error testing ${provider}: ${error.message}`);
+            toast.error(error.message, `${PROVIDER_LABELS[providerId]} Error`);
         } finally {
             setTesting(null);
         }
     };
 
+    const handleExportJSON = () => {
+        exportToJSON(prompts, folders);
+        toast.success('Exported to JSON file');
+    };
+
+    const handleExportMarkdown = () => {
+        exportToMarkdown(prompts, folders);
+        toast.success('Exported to Markdown file');
+    };
+
+    const handleReset = async () => {
+        const confirmed = await confirm({
+            title: 'Reset All Data',
+            message: 'This will remove all your custom prompts, folders, and runs. The app will be restored to its initial state with recommended templates. This action cannot be undone.',
+            confirmText: 'Reset Everything',
+            variant: 'danger'
+        });
+
+        if (confirmed) {
+            resetData();
+            toast.success('Data reset to defaults');
+        }
+    };
+
+    const toggleShowKey = (providerId) => {
+        setShowKeys((prev) => ({ ...prev, [providerId]: !prev[providerId] }));
+    };
+
     return (
-        <div className="max-w-2xl mx-auto">
-            <header className="mb-8">
+        <div className="max-w-3xl mx-auto space-y-8">
+            <header>
                 <h1 className="text-3xl font-bold text-text-main mb-2">Settings</h1>
-                <p className="text-text-secondary">Manage your API keys for direct model execution.</p>
+                <p className="text-text-secondary">Manage provider keys and exports. OpenRouter is the fastest way to compare multiple model families.</p>
             </header>
 
-            <div className="glass-panel p-8">
-                <div className="flex items-center gap-3 mb-6 text-primary">
+            <div className="glass-panel p-8 space-y-6">
+                <div className="flex items-center gap-3 text-primary">
                     <ShieldCheck size={24} />
                     <h2 className="text-xl font-semibold">API Configuration</h2>
                 </div>
 
-                <p className="text-sm text-text-secondary mb-6 bg-surface-highlight p-4 rounded-lg border border-border">
-                    Your keys are stored locally in your browser's Local Storage. They are never sent to our servers, only directly to the AI providers.
-                </p>
+                <div className="rounded-lg border border-border bg-surface-highlight p-4 text-sm text-text-secondary space-y-2">
+                    <p>Your keys are stored locally in your browser and sent directly to provider endpoints.</p>
+                    <p className="inline-flex items-center gap-2 text-text-main font-medium">
+                        <Route size={14} />
+                        OpenRouter enables model routing by model ID in Arena.
+                    </p>
+                </div>
 
                 <form onSubmit={handleSave} className="space-y-6">
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-text-main flex items-center gap-2">
-                            <Key size={14} /> OpenAI API Key
-                        </label>
-                        <div className="flex gap-2">
-                            <input
-                                type="password"
-                                value={keys.openai}
-                                onChange={e => setKeys({ ...keys, openai: e.target.value })}
-                                className="glass-input"
-                                placeholder="sk-..."
-                            />
-                            <button
-                                type="button"
-                                onClick={() => handleTest('OpenAI', keys.openai)}
-                                disabled={!keys.openai || testing === 'OpenAI'}
-                                className="glass-button whitespace-nowrap"
-                            >
-                                {testing === 'OpenAI' ? 'Testing...' : 'Test Key'}
-                            </button>
+                    {PROVIDERS.map((provider) => (
+                        <div key={provider.id} className="space-y-2">
+                            <label className="text-sm font-medium text-text-main flex items-center gap-2">
+                                <Key size={14} /> {provider.label}
+                            </label>
+                            <div className="flex gap-2">
+                                <div className="relative flex-1">
+                                    <input
+                                        type={showKeys[provider.id] ? 'text' : 'password'}
+                                        value={keys[provider.id] || ''}
+                                        onChange={(event) => setKeys({ ...keys, [provider.id]: event.target.value })}
+                                        className="glass-input pr-10"
+                                        placeholder={provider.placeholder}
+                                        aria-label={provider.label}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => toggleShowKey(provider.id)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-main transition-colors"
+                                        aria-label={showKeys[provider.id] ? 'Hide key' : 'Show key'}
+                                    >
+                                        {showKeys[provider.id] ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    </button>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => handleTest(provider.id, keys[provider.id])}
+                                    disabled={!keys[provider.id] || testing === provider.id}
+                                    className="glass-button whitespace-nowrap disabled:opacity-50"
+                                >
+                                    {testing === provider.id ? <RefreshCw size={16} className="animate-spin" /> : 'Test'}
+                                </button>
+                            </div>
                         </div>
-                    </div>
+                    ))}
 
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-text-main flex items-center gap-2">
-                            <Key size={14} /> Anthropic API Key
-                        </label>
-                        <div className="flex gap-2">
-                            <input
-                                type="password"
-                                value={keys.anthropic}
-                                onChange={e => setKeys({ ...keys, anthropic: e.target.value })}
-                                className="glass-input"
-                                placeholder="sk-ant-..."
-                            />
-                            <button
-                                type="button"
-                                onClick={() => handleTest('Claude', keys.anthropic)}
-                                disabled={!keys.anthropic || testing === 'Claude'}
-                                className="glass-button whitespace-nowrap"
-                            >
-                                {testing === 'Claude' ? 'Testing...' : 'Test Key'}
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-text-main flex items-center gap-2">
-                            <Key size={14} /> Gemini API Key
-                        </label>
-                        <div className="flex gap-2">
-                            <input
-                                type="password"
-                                value={keys.gemini}
-                                onChange={e => setKeys({ ...keys, gemini: e.target.value })}
-                                className="glass-input"
-                                placeholder="AIza..."
-                            />
-                            <button
-                                type="button"
-                                onClick={() => handleTest('Gemini', keys.gemini)}
-                                disabled={!keys.gemini || testing === 'Gemini'}
-                                className="glass-button whitespace-nowrap"
-                            >
-                                {testing === 'Gemini' ? 'Testing...' : 'Test Key'}
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="pt-4 flex items-center gap-4">
+                    <div className="pt-4">
                         <button
                             type="submit"
                             className="btn-primary flex items-center gap-2"
@@ -131,35 +179,53 @@ export function Settings() {
                             <Save size={18} />
                             Save Settings
                         </button>
-                        {saved && (
-                            <span className="text-green-500 font-medium animate-fade-in">
-                                Settings saved successfully!
-                            </span>
-                        )}
                     </div>
                 </form>
             </div>
 
-            <div className="glass-panel p-8 mt-8 border-red-500/20">
+            <div className="glass-panel p-8">
+                <div className="flex items-center gap-3 mb-6 text-primary">
+                    <Download size={24} />
+                    <h2 className="text-xl font-semibold">Export Data</h2>
+                </div>
+
+                <p className="text-sm text-text-secondary mb-6">
+                    Export your personal library prompts and folder setup.
+                </p>
+
+                <div className="flex gap-3 flex-wrap">
+                    <button
+                        onClick={handleExportJSON}
+                        className="glass-button flex items-center gap-2"
+                    >
+                        <FileJson size={18} />
+                        Export as JSON
+                    </button>
+                    <button
+                        onClick={handleExportMarkdown}
+                        className="glass-button flex items-center gap-2"
+                    >
+                        <FileText size={18} />
+                        Export as Markdown
+                    </button>
+                </div>
+            </div>
+
+            <div className="glass-panel p-8 border-red-500/20">
                 <div className="flex items-center gap-3 mb-6 text-red-500">
-                    <ShieldCheck size={24} />
+                    <Shuffle size={24} />
                     <h2 className="text-xl font-semibold">Danger Zone</h2>
                 </div>
 
                 <p className="text-sm text-text-secondary mb-6">
-                    Resetting your data will remove all your custom prompts, folders, and runs. This action cannot be undone.
+                    Resetting removes all custom prompts, folders, runs, and local keys. Recommended templates will still be available.
                 </p>
 
                 <button
-                    onClick={() => {
-                        if (window.confirm('Are you sure you want to reset all data to the default mock data? This cannot be undone.')) {
-                            resetData();
-                            alert('Data reset to defaults!');
-                        }
-                    }}
+                    onClick={handleReset}
                     className="px-4 py-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors text-sm font-medium border border-red-500/20"
                 >
-                    Reset to Mock Data
+                    Reset Local Data
                 </button>
             </div>
         </div>

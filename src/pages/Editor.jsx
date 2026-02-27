@@ -1,37 +1,50 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../hooks/useStore';
-import { Save, ArrowLeft, Plus, X, Type } from 'lucide-react';
+import { useToast } from '../components/Toast';
+import { Save, ArrowLeft, Plus, X, Type, Sparkles } from 'lucide-react';
 
 export function Editor() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { prompts, folders, addPrompt, updatePrompt } = useStore();
+    const toast = useToast();
+    const existingPrompt = id ? prompts.find(p => p.id === id) : null;
 
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState(() => existingPrompt || {
         title: '',
-        platform: 'ChatGPT',
+        platform: 'OpenRouter',
         content: '',
         tags: []
     });
     const [tagInput, setTagInput] = useState('');
-
-    useEffect(() => {
-        if (id) {
-            const prompt = prompts.find(p => p.id === id);
-            if (prompt) setFormData(prompt);
-        }
-    }, [id, prompts]);
 
     const detectedVariables = (formData.content.match(/\{\{([^}]+)\}\}/g) || [])
         .map(v => v.replace(/\{\{|\}\}/g, '').trim());
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (id) {
+        if (!formData.title.trim()) {
+            toast.error('Please enter a prompt name');
+            return;
+        }
+        if (!formData.content.trim()) {
+            toast.error('Please enter prompt content');
+            return;
+        }
+
+        if (id && !existingPrompt) {
+            toast.error('Prompt not found');
+            navigate('/app');
+            return;
+        }
+
+        if (id && existingPrompt) {
             updatePrompt(id, formData);
+            toast.success('Prompt updated successfully');
         } else {
             addPrompt(formData);
+            toast.success('Prompt created successfully');
         }
         navigate('/app');
     };
@@ -67,14 +80,14 @@ export function Editor() {
                         <Type size={24} />
                     </div>
                     <h1 className="text-2xl font-bold text-text-main">
-                        {id ? 'Edit Prompt Template' : 'Create New Template'}
+                        {id ? 'Edit Prompt' : 'Create New Prompt'}
                     </h1>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-text-secondary">Template Name</label>
+                            <label className="text-sm font-medium text-text-secondary">Prompt Name</label>
                             <input
                                 type="text"
                                 required
@@ -91,6 +104,7 @@ export function Editor() {
                                 onChange={e => setFormData({ ...formData, platform: e.target.value })}
                                 className="glass-input appearance-none"
                             >
+                                <option value="OpenRouter">OpenRouter</option>
                                 <option value="ChatGPT">ChatGPT</option>
                                 <option value="Claude">Claude</option>
                                 <option value="Gemini">Gemini</option>
@@ -181,7 +195,7 @@ export function Editor() {
                             className="btn-primary flex items-center gap-2"
                         >
                             <Save size={18} />
-                            Save Template
+                            Save Prompt
                         </button>
                     </div>
                 </form>

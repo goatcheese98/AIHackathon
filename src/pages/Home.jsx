@@ -1,197 +1,233 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { cn } from '../utils/cn';
-import { ArrowRight, Zap, Layers, BarChart3, Code, Share2, Sparkles } from 'lucide-react';
-import { HeroHighlight, Highlight } from '../components/ui/hero-highlight';
-import { BentoGrid, BentoGridItem } from '../components/ui/bento-grid';
-import { InfiniteMovingCards } from '../components/ui/infinite-moving-cards';
-import { Spotlight } from '../components/ui/spotlight';
-import { Ripple } from '../components/ui/ripple';
+import {
+    ArrowRight,
+    CheckCircle2,
+    FolderKanban,
+    Sparkles,
+    Swords,
+    WandSparkles,
+} from 'lucide-react';
 
 export function Home() {
-    return (
-        <div className="bg-background min-h-screen w-full overflow-hidden relative">
-            <Spotlight
-                className="-top-40 left-0 md:left-60 md:-top-20"
-                fill="white"
-            />
+    const containerRef = React.useRef(null);
 
-            {/* Hero Section */}
-            <HeroHighlight containerClassName="h-[40rem] md:h-[50rem] relative">
-                <Ripple className="opacity-50" />
-                <div className="text-center max-w-4xl mx-auto px-4 relative z-20">
-                    <div className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6 border border-primary/20 backdrop-blur-sm">
-                        The Ultimate Tool for Prompt Engineers
-                    </div>
-                    <h1 className="text-5xl md:text-7xl font-bold text-text-main mb-6 tracking-tight leading-tight">
-                        Master Your <Highlight className="text-white">Prompts</Highlight>.
-                        <br />
-                        Maximize Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500 dark:from-blue-400 dark:to-cyan-300">Impact</span>.
-                    </h1>
-                    <p className="text-xl text-text-secondary mb-10 max-w-2xl mx-auto leading-relaxed">
-                        Organize, template, and compare your AI prompts in one beautiful workspace.
-                        Stop juggling notepads and start engineering results.
+    const handlePointerMove = (event) => {
+        const el = containerRef.current;
+        if (!el) return;
+
+        const rect = el.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        const nx = (x / rect.width - 0.5) * 2;
+        const ny = (y / rect.height - 0.5) * 2;
+
+        el.style.setProperty('--mx', `${x}px`);
+        el.style.setProperty('--my', `${y}px`);
+        el.style.setProperty('--grid-shift-x', `${-nx * 8}px`);
+        el.style.setProperty('--grid-shift-y', `${-ny * 8}px`);
+        el.style.setProperty('--grid-scale', '1.01');
+        el.style.setProperty('--grid-opacity', '0.68');
+    };
+
+    const handlePointerLeave = () => {
+        const el = containerRef.current;
+        if (!el) return;
+
+        el.style.setProperty('--mx', '50%');
+        el.style.setProperty('--my', '20%');
+        el.style.setProperty('--grid-shift-x', '0px');
+        el.style.setProperty('--grid-shift-y', '0px');
+        el.style.setProperty('--grid-scale', '1');
+        el.style.setProperty('--grid-opacity', '0.56');
+    };
+
+    return (
+        <div
+            ref={containerRef}
+            onPointerMove={handlePointerMove}
+            onPointerLeave={handlePointerLeave}
+            className="relative overflow-hidden bg-background text-text-main"
+            style={{
+                '--mx': '50%',
+                '--my': '20%',
+                '--grid-shift-x': '0px',
+                '--grid-shift-y': '0px',
+                '--grid-scale': '1',
+                '--grid-opacity': '0.56',
+            }}
+        >
+            <div className="pointer-events-none absolute inset-0 landing-grid-bg" />
+            <div className="pointer-events-none absolute inset-0 landing-grid-reactive" />
+            <div className="pointer-events-none absolute left-[-10rem] top-[-10rem] h-[25rem] w-[25rem] rounded-full bg-cyan-500/20 blur-[120px]" />
+            <div className="pointer-events-none absolute right-[-8rem] top-[6rem] h-[20rem] w-[20rem] rounded-full bg-blue-500/15 blur-[110px]" />
+
+            <section className="relative z-10 mx-auto grid w-full max-w-6xl gap-10 px-6 pb-16 pt-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+                <div className="space-y-7">
+                    <p className="landing-mono inline-flex items-center gap-2 rounded-full border border-border bg-surface/80 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.18em] text-text-secondary backdrop-blur">
+                        <Sparkles size={14} className="text-cyan-500" />
+                        Simple Prompt Workspace
                     </p>
-                    <div className="flex flex-col sm:flex-row justify-center gap-4">
+
+                    <div className="space-y-5">
+                        <h1 className="landing-display max-w-2xl text-5xl leading-[1.05] tracking-tight md:text-6xl">
+                            Prompt engineering that feels easy from day one.
+                        </h1>
+                        <p className="max-w-xl text-lg leading-relaxed text-text-secondary">
+                            Write, organize, and test prompts in one place with a clear workflow that anyone on your team can follow.
+                        </p>
+                    </div>
+
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                         <Link
                             to="/app"
-                            className="btn-primary text-lg px-8 py-4 flex items-center justify-center gap-2 hover:scale-105 transition-transform shadow-lg shadow-primary/25"
+                            className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-7 py-3.5 font-semibold text-white shadow-lg shadow-cyan-500/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-cyan-500/45"
                         >
-                            Get Started Free <ArrowRight size={20} />
+                            Open PromptFolio
+                            <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
                         </Link>
-                        <a
-                            href="https://github.com"
-                            target="_blank"
-                            rel="noreferrer"
-                            className="glass-button text-lg px-8 py-4 flex items-center justify-center gap-2 hover:bg-white/5 transition-colors"
+                        <Link
+                            to="/new"
+                            className="inline-flex items-center justify-center rounded-xl border border-border bg-surface/85 px-7 py-3.5 font-medium text-text-main backdrop-blur transition-colors hover:bg-surface-highlight"
                         >
-                            View on GitHub
-                        </a>
+                            Create First Prompt
+                        </Link>
+                    </div>
+
+                    <p className="landing-mono text-xs text-text-secondary">
+                        No complicated setup. You can start creating immediately.
+                    </p>
+                </div>
+
+                <div className="rounded-3xl border border-border bg-surface/90 p-6 shadow-xl shadow-cyan-950/10 backdrop-blur-xl">
+                    <div className="flex items-center justify-between border-b border-border pb-4">
+                        <h2 className="landing-display text-xl">Your First 5 Minutes</h2>
+                        <span className="landing-mono rounded-full bg-emerald-500/15 px-2.5 py-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                            Quick Start
+                        </span>
+                    </div>
+
+                    <ol className="mt-4 space-y-3.5">
+                        {quickStart.map((item, idx) => (
+                            <li key={item.title} className="rounded-xl border border-border bg-background/70 p-4">
+                                <p className="landing-mono text-xs uppercase tracking-[0.16em] text-cyan-600 dark:text-cyan-400">
+                                    Step {idx + 1}
+                                </p>
+                                <p className="landing-display mt-1.5 text-lg">{item.title}</p>
+                                <p className="mt-1.5 text-sm text-text-secondary">{item.description}</p>
+                            </li>
+                        ))}
+                    </ol>
+                </div>
+            </section>
+
+            <section className="relative z-10 mx-auto w-full max-w-6xl px-6 py-10">
+                <div className="mb-7">
+                    <p className="landing-mono text-xs uppercase tracking-[0.2em] text-text-secondary">Core Workflow</p>
+                    <h2 className="landing-display mt-2 text-4xl md:text-[2.7rem]">Everything important, nothing overwhelming.</h2>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-3">
+                    {workflowCards.map((item) => (
+                        <article key={item.title} className="rounded-2xl border border-border bg-surface/75 p-6 backdrop-blur">
+                            <div className="mb-4 inline-flex rounded-xl bg-cyan-500/15 p-2 text-cyan-600 dark:text-cyan-400">
+                                <item.icon size={20} />
+                            </div>
+                            <h3 className="landing-display text-2xl">{item.title}</h3>
+                            <p className="mt-2 text-sm leading-relaxed text-text-secondary">{item.description}</p>
+                        </article>
+                    ))}
+                </div>
+            </section>
+
+            <section className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-24 pt-12">
+                <div className="rounded-3xl border border-border bg-gradient-to-br from-surface to-background p-8 md:p-10">
+                    <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
+                        <div>
+                            <p className="landing-mono text-xs uppercase tracking-[0.2em] text-text-secondary">Why Teams Like It</p>
+                            <h2 className="landing-display mt-2 text-4xl leading-tight md:text-[2.7rem]">
+                                Onboarding is smooth because the product flow is obvious.
+                            </h2>
+                            <ul className="mt-6 space-y-3">
+                                {approachabilityPoints.map((point) => (
+                                    <li key={point} className="flex items-start gap-2.5 text-sm text-text-secondary">
+                                        <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-emerald-500" />
+                                        <span>{point}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <div className="rounded-2xl border border-border bg-background/80 p-5 md:min-w-[17rem]">
+                            <p className="landing-mono text-xs uppercase tracking-[0.16em] text-text-secondary">Looks Familiar</p>
+                            <div className="mt-3 space-y-2.5">
+                                {uiPreview.map((row) => (
+                                    <div key={row} className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-secondary">
+                                        {row}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-8 border-t border-border pt-6">
+                        <Link
+                            to="/app"
+                            className="group inline-flex items-center gap-2 rounded-xl bg-text-main px-6 py-3 font-semibold text-background transition-opacity hover:opacity-90"
+                        >
+                            Start with one prompt
+                            <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" />
+                        </Link>
                     </div>
                 </div>
-            </HeroHighlight>
-
-            {/* Features Section */}
-            <div className="py-20 px-4 relative z-10">
-                <h2 className="text-3xl md:text-5xl font-bold text-center mb-16 text-text-main">
-                    Everything you need to <span className="text-primary">excel</span>
-                </h2>
-                <BentoGrid className="max-w-6xl mx-auto">
-                    {features.map((feature, i) => (
-                        <BentoGridItem
-                            key={i}
-                            title={feature.title}
-                            description={feature.description}
-                            header={feature.header}
-                            icon={feature.icon}
-                            className={i === 3 || i === 6 ? "md:col-span-2" : ""}
-                        />
-                    ))}
-                </BentoGrid>
-            </div>
-
-            {/* Supported Models Section */}
-            <div className="py-20 relative z-10 bg-surface/30 backdrop-blur-sm border-y border-white/5">
-                <h3 className="text-2xl md:text-3xl font-bold text-center mb-10 text-text-secondary">
-                    Powering your workflows with top models
-                </h3>
-                <InfiniteMovingCards
-                    items={testimonials}
-                    direction="right"
-                    speed="slow"
-                />
-            </div>
-
-            {/* CTA Section */}
-            <div className="py-32 text-center relative z-10">
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-primary/5 pointer-events-none" />
-                <h2 className="text-4xl md:text-6xl font-bold text-text-main mb-8">
-                    Ready to level up?
-                </h2>
-                <Link
-                    to="/app"
-                    className="inline-flex items-center gap-2 px-8 py-4 bg-white text-black rounded-full font-bold text-lg hover:bg-gray-100 transition-colors shadow-xl shadow-white/10"
-                >
-                    Start Building Now <Sparkles size={20} className="text-yellow-500" />
-                </Link>
-            </div>
+            </section>
         </div>
     );
 }
 
-const Skeleton = ({ children, className }) => (
-    <div className={cn("flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 border border-transparent dark:border-white/[0.1]", className)}>
-        {children}
-    </div>
-);
-
-const features = [
+const quickStart = [
     {
-        title: "Smart Library",
-        description: "Organize prompts with tags and platforms. Never lose a winning prompt again.",
-        header: (
-            <Skeleton className="flex flex-col gap-2 p-4">
-                <div className="h-2 w-1/2 bg-gray-300 dark:bg-gray-700 rounded-full" />
-                <div className="h-2 w-full bg-gray-200 dark:bg-gray-800 rounded-full" />
-                <div className="h-2 w-full bg-gray-200 dark:bg-gray-800 rounded-full" />
-                <div className="h-2 w-3/4 bg-gray-200 dark:bg-gray-800 rounded-full" />
-            </Skeleton>
-        ),
-        icon: <Layers className="h-4 w-4 text-neutral-500" />,
+        title: 'Create a prompt in plain text',
+        description: 'Use a clean editor to write your prompt without distractions.',
     },
     {
-        title: "Dynamic Templates",
-        description: "Create reusable templates with {{variables}}. Fill them out instantly for any use case.",
-        header: (
-            <Skeleton className="flex items-center justify-center">
-                <div className="px-4 py-2 rounded-lg bg-emerald-500/10 text-emerald-500 text-xs font-mono border border-emerald-500/20">
-                    {"{{ user_persona }}"}
-                </div>
-            </Skeleton>
-        ),
-        icon: <Zap className="h-4 w-4 text-neutral-500" />,
+        title: 'Turn repeated parts into a template',
+        description: 'Add variables once so your team can reuse the prompt confidently.',
     },
     {
-        title: "The Arena",
-        description: "Run prompts against ChatGPT, Claude, and Gemini side-by-side. Rate and log the winner.",
-        header: (
-            <Skeleton className="grid grid-cols-2 gap-2 p-2">
-                <div className="bg-orange-500/10 rounded-lg h-full w-full border border-orange-500/20" />
-                <div className="bg-blue-500/10 rounded-lg h-full w-full border border-blue-500/20" />
-            </Skeleton>
-        ),
-        icon: <BarChart3 className="h-4 w-4 text-neutral-500" />,
-    },
-    {
-        title: "API Integration",
-        description: "Connect your own API keys to run prompts directly within the platform. Secure and local.",
-        header: (
-            <Skeleton className="flex items-center justify-center">
-                <div className="flex gap-2">
-                    <div className="w-2 h-2 rounded-full bg-red-500" />
-                    <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                    <div className="w-2 h-2 rounded-full bg-green-500" />
-                </div>
-            </Skeleton>
-        ),
-        icon: <Code className="h-4 w-4 text-neutral-500" />,
-    },
-    {
-        title: "Share & Collaborate",
-        description: "Export your prompts to JSON or Markdown. Share with your team easily.",
-        header: (
-            <Skeleton className="flex items-center justify-center text-cyan-500">
-                <Share2 size={32} className="opacity-50" />
-            </Skeleton>
-        ),
-        icon: <Share2 className="h-4 w-4 text-neutral-500" />,
+        title: 'Compare outputs in Arena',
+        description: 'Run side-by-side tests and keep the version that reads best.',
     },
 ];
 
-const testimonials = [
+const workflowCards = [
     {
-        quote: "The reasoning capabilities are unmatched for complex tasks.",
-        name: "OpenAI",
-        title: "GPT-4o",
+        icon: FolderKanban,
+        title: 'Organize',
+        description: 'Folders and tags keep prompts easy to find, even as your library grows.',
     },
     {
-        quote: "Large context window allows for processing entire books.",
-        name: "Anthropic",
-        title: "Claude 3.5 Sonnet",
+        icon: WandSparkles,
+        title: 'Template',
+        description: 'Reusable variables help new teammates start quickly with less guesswork.',
     },
     {
-        quote: "Multimodal capabilities integrated natively from the start.",
-        name: "Google",
-        title: "Gemini 1.5 Pro",
+        icon: Swords,
+        title: 'Compare',
+        description: 'Simple side-by-side evaluation makes quality decisions faster.',
     },
-    {
-        quote: "Open weights model that rivals proprietary performance.",
-        name: "Meta",
-        title: "Llama 3",
-    },
-    {
-        quote: "Fast and efficient for coding and reasoning tasks.",
-        name: "Mistral",
-        title: "Mistral Large",
-    },
+];
+
+const approachabilityPoints = [
+    'Clear labels and predictable navigation make the app easy to learn.',
+    'Each page focuses on one job, so new users do not feel overloaded.',
+    'Reusable templates reduce copy-paste mistakes during onboarding.',
+    'Prompt comparisons are visual and straightforward, not technical.',
+];
+
+const uiPreview = [
+    'Library: all prompts in one place',
+    'Editor: write or edit with zero clutter',
+    'Arena: compare two prompt responses',
+    'History: revisit what worked before',
 ];

@@ -1,58 +1,89 @@
+import { DEFAULT_MODELS, PROVIDER_LABELS } from '../data/models';
+
+function normalizeProvider(input = '') {
+    const value = String(input).toLowerCase();
+
+    if (value.includes('openrouter')) return 'openrouter';
+    if (value.includes('chatgpt') || value.includes('openai') || value === 'gpt') return 'openai';
+    if (value.includes('claude') || value.includes('anthropic')) return 'anthropic';
+    if (value.includes('gemini') || value.includes('google')) return 'gemini';
+
+    return value;
+}
+
+async function parseError(response, fallbackMessage) {
+    try {
+        const err = await response.json();
+        return err.error?.message || err.message || fallbackMessage;
+    } catch {
+        return fallbackMessage;
+    }
+}
+
 export const AIService = {
-    async run(provider, apiKey, prompt) {
-        if (!apiKey) {
-            throw new Error(`API Key for ${provider} is missing. Please add it in Settings.`);
+    async run(providerOrConfig, apiKeyArg, promptArg) {
+        const config = typeof providerOrConfig === 'object'
+            ? providerOrConfig
+            : {
+                provider: providerOrConfig,
+                apiKey: apiKeyArg,
+                prompt: promptArg
+            };
+
+        const provider = normalizeProvider(config.provider);
+        const model = config.model || DEFAULT_MODELS[provider];
+        const apiKey = config.apiKey;
+        const prompt = config.prompt;
+
+        if (!provider) {
+            throw new Error('Provider is required.');
         }
 
-        try {
-            switch (provider.toLowerCase()) {
-                case 'chatgpt':
-                case 'openai':
-                    return await this.callOpenAI(apiKey, prompt);
-                case 'claude':
-                case 'anthropic':
-                    return await this.callAnthropic(apiKey, prompt);
-                case 'gemini':
-                case 'google':
-                    return await this.callGemini(apiKey, prompt);
-                default:
-                    throw new Error(`Provider ${provider} not supported via API yet.`);
-            }
-        } catch (error) {
-            console.error("AI API Error:", error);
-            return `Error: ${error.message}`;
+        if (!apiKey) {
+            throw new Error(`API key for ${PROVIDER_LABELS[provider] || provider} is missing. Please add it in Settings.`);
+        }
+
+        if (!prompt) {
+            throw new Error('Prompt is empty.');
+        }
+
+        switch (provider) {
+            case 'openrouter':
+                return this.callOpenRouter(apiKey, prompt, model || DEFAULT_MODELS.openrouter);
+            case 'openai':
+                return this.callOpenAI(apiKey, prompt, model || DEFAULT_MODELS.openai);
+            case 'anthropic':
+                return this.callAnthropic(apiKey, prompt, model || DEFAULT_MODELS.anthropic);
+            case 'gemini':
+                return this.callGemini(apiKey, prompt, model || DEFAULT_MODELS.gemini);
+            default:
+                throw new Error(`Provider ${provider} is not supported.`);
         }
     },
 
-    async callOpenAI(apiKey, prompt) {
+    async callOpenAI(apiKey, prompt, model) {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
+                Authorization: `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-                model: "gpt-4o",
-                messages: [{ role: "user", content: prompt }],
+                model,
+                messages: [{ role: 'user', content: prompt }],
                 temperature: 0.7
             })
         });
 
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.error?.message || 'OpenAI API failed');
+            throw new Error(await parseError(response, 'OpenAI API failed'));
         }
 
         const data = await response.json();
-        return data.choices[0].message.content;
+        return data.choices?.[0]?.message?.content || '';
     },
 
-    async callAnthropic(apiKey, prompt) {
-        // Note: Anthropic usually requires a proxy for browser usage due to CORS, 
-        // but we'll implement the direct call structure. 
-        // In a real hackathon, users might need a CORS extension or a simple proxy.
-        // For this demo, we'll try direct and handle the likely CORS error with a helpful message.
-
+    async callAnthropic(apiKey, prompt, model) {
         try {
             const response = await fetch('https://api.anthropic.com/v1/messages', {
                 method: 'POST',
@@ -60,32 +91,31 @@ export const AIService = {
                     'x-api-key': apiKey,
                     'anthropic-version': '2023-06-01',
                     'content-type': 'application/json',
-                    'dangerously-allow-browser': 'true' // Required for client-side calls
+                    'dangerously-allow-browser': 'true'
                 },
                 body: JSON.stringify({
-                    model: "claude-3-5-sonnet-20240620",
+                    model,
                     max_tokens: 1024,
-                    messages: [{ role: "user", content: prompt }]
+                    messages: [{ role: 'user', content: prompt }]
                 })
             });
 
             if (!response.ok) {
-                const err = await response.json();
-                throw new Error(err.error?.message || 'Anthropic API failed');
+                throw new Error(await parseError(response, 'Anthropic API failed'));
             }
 
             const data = await response.json();
-            return data.content[0].text;
-        } catch (e) {
-            if (e.message.includes('Failed to fetch')) {
-                throw new Error('CORS Error: Anthropic API blocks browser calls. Use a CORS extension or proxy.');
+            return data.content?.[0]?.text || '';
+        } catch (error) {
+            if (String(error?.message || '').includes('Failed to fetch')) {
+                throw new Error('CORS error: Anthropic blocks most direct browser calls. Use OpenRouter or a backend proxy.');
             }
-            throw e;
+            throw error;
         }
     },
 
-    async callGemini(apiKey, prompt) {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    async callGemini(apiKey, prompt, model) {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -98,11 +128,34 @@ export const AIService = {
         });
 
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.error?.message || 'Gemini API failed');
+            throw new Error(await parseError(response, 'Gemini API failed'));
         }
 
         const data = await response.json();
-        return data.candidates[0].content.parts[0].text;
+        return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    },
+
+    async callOpenRouter(apiKey, prompt, model) {
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${apiKey}`,
+                'HTTP-Referer': window.location.origin,
+                'X-Title': 'PromptFolio'
+            },
+            body: JSON.stringify({
+                model,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.7
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(await parseError(response, 'OpenRouter API failed'));
+        }
+
+        const data = await response.json();
+        return data.choices?.[0]?.message?.content || '';
     }
 };
