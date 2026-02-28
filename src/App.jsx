@@ -11,6 +11,8 @@ import { AltHome2 } from './pages/AltHome2';
 import { AltHome3 } from './pages/AltHome3';
 import { AltHome4 } from './pages/AltHome4';
 import { AltHome5 } from './pages/AltHome5';
+import { AltHome6 } from './pages/AltHome6';
+import { AltHome7 } from './pages/AltHome7';
 import { Library } from './pages/Library';
 import { Templates } from './pages/Templates';
 import { Editor } from './pages/Editor';
@@ -38,6 +40,8 @@ function App() {
                   <Route path="/alt3" element={<AltHome3 />} />
                   <Route path="/alt4" element={<AltHome4 />} />
                   <Route path="/alt5" element={<AltHome5 />} />
+                  <Route path="/alt6" element={<AltHome6 />} />
+                  <Route path="/alt7" element={<AltHome7 />} />
                   <Route path="/app" element={<Library />} />
                   <Route path="/templates" element={<Templates />} />
                   <Route path="/new" element={<EditorRoute />} />

@@ -1,264 +1,102 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Edit2, Play, Trash2, Copy, FileText, Check, Download } from 'lucide-react';
-import { clsx } from 'clsx';
+import { Edit2, Play, Copy, Check, Download, MoreHorizontal, Trash2 } from 'lucide-react';
 import { exportSinglePrompt } from '../utils/export';
 
-const COLORS = [
-    {
-        name: 'default',
-        cardBorder: 'border-border',
-        cardBg: 'bg-surface',
-        pickerBg: 'bg-slate-200 dark:bg-slate-700',
-        pickerBorder: 'border-slate-300 dark:border-slate-600',
-        accentBg: 'bg-primary/10',
-        accentText: 'text-primary'
-    },
-    {
-        name: 'blue',
-        cardBorder: 'border-blue-500',
-        cardBg: 'bg-blue-500/5',
-        pickerBg: 'bg-blue-500',
-        pickerBorder: 'border-blue-600',
-        accentBg: 'bg-blue-500/10',
-        accentText: 'text-blue-500'
-    },
-    {
-        name: 'green',
-        cardBorder: 'border-emerald-500',
-        cardBg: 'bg-emerald-500/5',
-        pickerBg: 'bg-emerald-500',
-        pickerBorder: 'border-emerald-600',
-        accentBg: 'bg-emerald-500/10',
-        accentText: 'text-emerald-500'
-    },
-    {
-        name: 'orange',
-        cardBorder: 'border-orange-500',
-        cardBg: 'bg-orange-500/5',
-        pickerBg: 'bg-orange-500',
-        pickerBorder: 'border-orange-600',
-        accentBg: 'bg-orange-500/10',
-        accentText: 'text-orange-500'
-    },
-    {
-        name: 'red',
-        cardBorder: 'border-red-500',
-        cardBg: 'bg-red-500/5',
-        pickerBg: 'bg-red-500',
-        pickerBorder: 'border-red-600',
-        accentBg: 'bg-red-500/10',
-        accentText: 'text-red-500'
-    },
-    {
-        name: 'cyan',
-        cardBorder: 'border-cyan-500',
-        cardBg: 'bg-cyan-500/5',
-        pickerBg: 'bg-cyan-500',
-        pickerBorder: 'border-cyan-600',
-        accentBg: 'bg-cyan-500/10',
-        accentText: 'text-cyan-500'
-    },
-    {
-        name: 'purple',
-        cardBorder: 'border-purple-500',
-        cardBg: 'bg-purple-500/5',
-        pickerBg: 'bg-purple-500',
-        pickerBorder: 'border-purple-600',
-        accentBg: 'bg-purple-500/10',
-        accentText: 'text-purple-500'
-    },
-    {
-        name: 'pink',
-        cardBorder: 'border-pink-500',
-        cardBg: 'bg-pink-500/5',
-        pickerBg: 'bg-pink-500',
-        pickerBorder: 'border-pink-600',
-        accentBg: 'bg-pink-500/10',
-        accentText: 'text-pink-500'
-    },
-    {
-        name: 'yellow',
-        cardBorder: 'border-yellow-500',
-        cardBg: 'bg-yellow-500/5',
-        pickerBg: 'bg-yellow-500',
-        pickerBorder: 'border-yellow-600',
-        accentBg: 'bg-yellow-500/10',
-        accentText: 'text-yellow-500'
-    },
-    {
-        name: 'teal',
-        cardBorder: 'border-teal-500',
-        cardBg: 'bg-teal-500/5',
-        pickerBg: 'bg-teal-500',
-        pickerBorder: 'border-teal-600',
-        accentBg: 'bg-teal-500/10',
-        accentText: 'text-teal-500'
-    },
-    {
-        name: 'indigo',
-        cardBorder: 'border-indigo-500',
-        cardBg: 'bg-indigo-500/5',
-        pickerBg: 'bg-indigo-500',
-        pickerBorder: 'border-indigo-600',
-        accentBg: 'bg-indigo-500/10',
-        accentText: 'text-indigo-500'
-    },
-];
-
-export function PromptCard({ prompt, onDelete, onUpdate }) {
-    const [showColors, setShowColors] = useState(false);
+export function PromptCard({ prompt, onDelete }) {
     const [copied, setCopied] = useState(false);
-    const [showExport, setShowExport] = useState(false);
+    const [menuOpen, setMenuOpen] = useState(false);
 
-    const handleCopy = (e) => {
-        e.preventDefault();
+    const handleCopy = () => {
         navigator.clipboard.writeText(prompt.content);
         setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        setTimeout(() => setCopied(false), 1800);
     };
 
     const handleExport = (format) => {
         exportSinglePrompt(prompt, format);
-        setShowExport(false);
+        setMenuOpen(false);
     };
 
-    const activeColor = COLORS.find(c => c.name === prompt.color) || COLORS[0];
-
     return (
-        <div className={clsx(
-            "glass-panel p-6 group hover:shadow-lg transition-all duration-300 flex flex-col h-full relative",
-            activeColor.name !== 'default' ? activeColor.cardBorder : "hover:shadow-primary/5 hover:border-primary/30",
-            activeColor.name !== 'default' && activeColor.cardBg
-        )}>
-            <div className="flex justify-between items-start mb-4">
-                <div className="flex items-start gap-3 min-w-0 flex-1">
-                    <div className="relative flex-shrink-0">
-                        <button
-                            onClick={() => setShowColors(!showColors)}
-                            className={clsx(
-                                "p-2 rounded-lg transition-transform hover:scale-105",
-                                activeColor.accentBg,
-                                activeColor.accentText
-                            )}
-                        >
-                            <FileText size={18} />
-                        </button>
-                        {showColors && (
-                            <div className="absolute top-full left-0 mt-2 p-2 bg-surface border border-border rounded-xl shadow-xl grid grid-cols-4 gap-2 z-50 animate-in fade-in slide-in-from-top-2 w-48">
-                                {COLORS.map(color => (
-                                    <button
-                                        key={color.name}
-                                        onClick={() => {
-                                            onUpdate(prompt.id, { color: color.name });
-                                            setShowColors(false);
-                                        }}
-                                        className={clsx(
-                                            "w-6 h-6 rounded-full border transition-transform hover:scale-110",
-                                            color.pickerBg,
-                                            color.pickerBorder,
-                                            prompt.color === color.name && "ring-2 ring-offset-2 ring-text-main"
-                                        )}
-                                        title={color.name}
-                                    />
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                        <h3 className="text-lg font-bold text-text-main mb-1 truncate">{prompt.title}</h3>
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-xs font-medium text-text-secondary flex-shrink-0">
-                                {prompt.platform}
-                            </span>
-                            {prompt.tags?.slice(0, 3).map(tag => (
-                                <span key={tag} className={clsx(
-                                    "text-xs px-2 py-0.5 rounded-full font-medium truncate max-w-[80px]",
-                                    activeColor.accentBg,
-                                    activeColor.accentText
-                                )}>
-                                    {tag}
-                                </span>
-                            ))}
-                            {prompt.tags?.length > 3 && (
-                                <span className="text-xs text-text-secondary">
-                                    +{prompt.tags.length - 3}
-                                </span>
-                            )}
-                        </div>
-                    </div>
+        <article className="glass-panel flex h-full flex-col p-3.5">
+            <div className="mb-2.5 flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                    <h3 className="truncate text-base font-bold text-text-main">{prompt.title}</h3>
+                    <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-text-secondary">{prompt.platform}</p>
                 </div>
-            </div>
 
-            <div className="bg-surface-highlight p-4 rounded-lg border border-border mb-6 flex-1">
-                <p className="text-text-secondary text-sm line-clamp-4 font-mono leading-relaxed">
-                    {prompt.content}
-                </p>
-            </div>
-
-            <div className="flex items-center gap-2 pt-2 border-t border-border/50 relative">
-                <Link
-                    to={`/edit/${prompt.id}`}
-                    className="p-2 rounded-lg hover:bg-surface-highlight text-text-secondary hover:text-text-main transition-colors"
-                    title="Edit"
-                >
-                    <Edit2 size={16} />
-                </Link>
-                <button
-                    onClick={handleCopy}
-                    className={clsx(
-                        "p-2 rounded-lg hover:bg-surface-highlight transition-colors",
-                        copied ? "text-emerald-500" : "text-text-secondary hover:text-text-main"
-                    )}
-                    title={copied ? "Copied!" : "Copy raw prompt"}
-                    aria-label="Copy prompt content"
-                >
-                    {copied ? <Check size={16} /> : <Copy size={16} />}
-                </button>
                 <div className="relative">
                     <button
-                        onClick={() => setShowExport(!showExport)}
-                        className="p-2 rounded-lg hover:bg-surface-highlight text-text-secondary hover:text-text-main transition-colors"
-                        title="Export prompt"
-                        aria-label="Export prompt"
+                        onClick={() => setMenuOpen((prev) => !prev)}
+                        className="glass-button !px-2 !py-2"
+                        aria-label="Prompt options"
                     >
-                        <Download size={16} />
+                        <MoreHorizontal size={14} />
                     </button>
-                    {showExport && (
-                        <div className="absolute bottom-full left-0 mb-2 bg-surface border border-border rounded-lg shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2">
+
+                    {menuOpen && (
+                        <div className="absolute right-0 top-full z-40 mt-2 min-w-[180px] rounded-xl border border-border bg-surface p-2 shadow-xl">
+                            <button
+                                onClick={handleCopy}
+                                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-text-main hover:bg-surface-highlight"
+                            >
+                                {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                                {copied ? 'Copied' : 'Copy Prompt'}
+                            </button>
                             <button
                                 onClick={() => handleExport('markdown')}
-                                className="w-full px-4 py-2 text-sm text-left hover:bg-surface-highlight transition-colors whitespace-nowrap"
+                                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-text-main hover:bg-surface-highlight"
                             >
-                                Export as Markdown
+                                <Download size={14} /> Export Markdown
                             </button>
                             <button
                                 onClick={() => handleExport('json')}
-                                className="w-full px-4 py-2 text-sm text-left hover:bg-surface-highlight transition-colors whitespace-nowrap"
+                                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-text-main hover:bg-surface-highlight"
                             >
-                                Export as JSON
+                                <Download size={14} /> Export JSON
+                            </button>
+                            <button
+                                onClick={() => {
+                                    onDelete(prompt.id);
+                                    setMenuOpen(false);
+                                }}
+                                className="mt-1 flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-red-500 hover:bg-red-500/10"
+                            >
+                                <Trash2 size={14} /> Delete
                             </button>
                         </div>
                     )}
                 </div>
+            </div>
 
+            <p className="rounded-xl border border-border bg-surface-highlight/80 p-3 font-mono text-sm leading-relaxed text-text-secondary line-clamp-5 min-h-[7rem]">
+                {prompt.content}
+            </p>
 
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
+                {prompt.tags?.slice(0, 4).map((tag) => (
+                    <span key={tag} className="inline-flex max-w-[105px] truncate rounded-full bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary">
+                        #{tag}
+                    </span>
+                ))}
+                {prompt.tags?.length > 4 && (
+                    <span className="inline-flex rounded-full border border-border px-2 py-1 text-[11px] font-semibold text-text-secondary">
+                        +{prompt.tags.length - 4}
+                    </span>
+                )}
+            </div>
 
-                <button
-                    onClick={() => onDelete(prompt.id)}
-                    className="p-2 rounded-lg hover:bg-red-500/10 text-text-secondary hover:text-red-500 transition-colors ml-auto"
-                    title="Delete"
-                >
-                    <Trash2 size={16} />
-                </button>
-                <Link
-                    to={`/arena?prompt=${prompt.id}`}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary-hover transition-colors text-sm font-medium ml-2 shadow-md shadow-primary/20"
-                >
+            <div className="mt-3 grid grid-cols-2 gap-2 border-t border-border pt-3">
+                <Link to={`/edit/${prompt.id}`} className="glass-button w-full justify-center">
+                    <Edit2 size={14} />
+                    Edit
+                </Link>
+                <Link to={`/arena?prompt=${prompt.id}`} className="btn-primary w-full justify-center !px-3 !py-2">
                     <Play size={14} />
                     Run
                 </Link>
             </div>
-        </div>
+        </article>
     );
 }

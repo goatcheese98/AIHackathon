@@ -1,385 +1,478 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { useStore } from '../hooks/useStore';
-import { PromptCard } from '../components/PromptCard';
-import { useConfirm } from '../components/ConfirmDialog';
-import { useToast } from '../components/Toast';
 import {
-    Search,
-    Filter,
-    Plus,
-    Folder,
-    Trash2,
-    Tag,
-    Hash,
+    AlertCircle,
     ChevronLeft,
     ChevronRight,
+    Clock3,
+    Copy,
+    Edit2,
+    FilterX,
+    FolderOpen,
     Layers3,
-    Sparkles
+    Play,
+    Plus,
+    Search,
+    Sparkles,
+    Trash2,
 } from 'lucide-react';
+import { useStore } from '../hooks/useStore';
+import { useConfirm } from '../components/ConfirmDialog';
+import { useToast } from '../components/Toast';
 
-const ITEMS_PER_PAGE = 12;
+const ITEMS_PER_PAGE = 9;
+const SEVEN_DAYS_MS = 1000 * 60 * 60 * 24 * 7;
+
+function formatDateLabel(dateValue) {
+    const date = new Date(dateValue || 0);
+    if (Number.isNaN(date.getTime())) return '';
+    return new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+    }).format(date);
+}
+
+function FilterSelect({ value, onChange, children }) {
+    return (
+        <select
+            value={value}
+            onChange={onChange}
+            className="rounded-xl border border-border bg-surface/85 px-2.5 py-1.5 text-xs text-text-secondary cursor-pointer transition-all hover:border-primary/30 hover:text-text-main focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+        >
+            {children}
+        </select>
+    );
+}
+
+function PromptRow({ prompt, folderName, onDelete, onCopy }) {
+    return (
+        <article className="glass-panel flex flex-col p-4 transition-all duration-200 hover:border-primary/20">
+            <div className="flex items-start justify-between gap-2 mb-3">
+                <div className="min-w-0 flex-1">
+                    <h3 className="font-semibold text-text-main leading-snug truncate">{prompt.title}</h3>
+                    <p className="text-xs text-text-secondary mt-0.5">
+                        {[prompt.platform, folderName].filter(Boolean).join(' · ')}
+                    </p>
+                </div>
+                <span className="shrink-0 text-[11px] text-text-secondary/60 mt-0.5 tabular-nums">
+                    {formatDateLabel(prompt.createdAt)}
+                </span>
+            </div>
+
+            <p className="font-mono text-xs leading-relaxed text-text-secondary/80 bg-surface-highlight/60 rounded-lg px-3 py-2.5 line-clamp-3 flex-1 mb-3">
+                {prompt.content || 'No content yet.'}
+            </p>
+
+            {(prompt.tags || []).length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-3">
+                    {(prompt.tags || []).slice(0, 5).map((tag) => (
+                        <span
+                            key={tag}
+                            className="rounded-full bg-primary/8 px-2 py-0.5 text-[11px] font-medium text-primary"
+                        >
+                            #{tag}
+                        </span>
+                    ))}
+                    {(prompt.tags || []).length > 5 && (
+                        <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-text-secondary">
+                            +{(prompt.tags || []).length - 5}
+                        </span>
+                    )}
+                </div>
+            )}
+
+            <div className="flex gap-1.5 pt-3 border-t border-border/60">
+                <Link
+                    to={`/arena?prompt=${prompt.id}`}
+                    className="btn-primary flex-1 justify-center !py-1.5 !text-xs !px-3 !rounded-lg"
+                >
+                    <Play size={12} />
+                    Run
+                </Link>
+                <Link
+                    to={`/edit/${prompt.id}`}
+                    className="glass-button !py-1.5 !text-xs !px-3 !rounded-lg"
+                >
+                    <Edit2 size={12} />
+                    Edit
+                </Link>
+                <button
+                    onClick={() => onCopy(prompt)}
+                    className="glass-button !py-1.5 !px-2.5 !rounded-lg"
+                    title="Copy to clipboard"
+                >
+                    <Copy size={12} />
+                </button>
+                <button
+                    onClick={() => onDelete(prompt.id)}
+                    className="glass-button !py-1.5 !px-2.5 !rounded-lg hover:text-red-500 hover:border-red-500/30 hover:bg-red-500/5"
+                    title="Delete"
+                >
+                    <Trash2 size={12} />
+                </button>
+            </div>
+        </article>
+    );
+}
 
 export function Library() {
-    const { prompts, folders, deletePrompt, createFolder, deleteFolder, updatePrompt } = useStore();
+    const { prompts, folders, deletePrompt, createFolder } = useStore();
     const confirm = useConfirm();
     const toast = useToast();
 
     const [search, setSearch] = useState('');
-    const [filter, setFilter] = useState('All');
+    const [platformFilter, setPlatformFilter] = useState('all');
+    const [focusFilter, setFocusFilter] = useState('all');
     const [selectedFolderId, setSelectedFolderId] = useState('all');
     const [selectedTag, setSelectedTag] = useState('all');
+    const [sortBy, setSortBy] = useState('newest');
     const [newFolderName, setNewFolderName] = useState('');
-    const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+    const [showCreateFolder, setShowCreateFolder] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
+    const [mountTime] = useState(() => Date.now());
 
-    const allTags = [...new Set(prompts.flatMap((prompt) => prompt.tags || []))].sort();
-    const allPlatforms = ['All', ...new Set(prompts.map((prompt) => prompt.platform).filter(Boolean))];
+    const sevenDaysAgo = mountTime - SEVEN_DAYS_MS;
+
+    const allTags = useMemo(
+        () => [...new Set(prompts.flatMap((p) => p.tags || []))].sort((a, b) => a.localeCompare(b)),
+        [prompts]
+    );
+    const allPlatforms = useMemo(
+        () => [...new Set(prompts.map((p) => p.platform).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+        [prompts]
+    );
+
+    const folderNameById = useMemo(
+        () => folders.reduce((acc, f) => { acc[f.id] = f.name; return acc; }, {}),
+        [folders]
+    );
+
+    const recentCount = useMemo(
+        () => prompts.filter((p) => new Date(p.createdAt || 0).getTime() >= sevenDaysAgo).length,
+        [prompts, sevenDaysAgo]
+    );
+    const untaggedCount = useMemo(
+        () => prompts.filter((p) => !p.tags || p.tags.length === 0).length,
+        [prompts]
+    );
+
+    const hasActiveFilters =
+        search.trim() ||
+        platformFilter !== 'all' ||
+        focusFilter !== 'all' ||
+        selectedFolderId !== 'all' ||
+        selectedTag !== 'all' ||
+        sortBy !== 'newest';
 
     const filteredPrompts = useMemo(() => {
-        return prompts.filter((prompt) => {
-            const matchesSearch = prompt.title.toLowerCase().includes(search.toLowerCase()) ||
-                prompt.content.toLowerCase().includes(search.toLowerCase());
-            const matchesFilter = filter === 'All' || prompt.platform === filter;
-            const matchesFolder = selectedFolderId === 'all' ||
-                (selectedFolderId === 'uncategorized' ? !prompt.folderId : prompt.folderId === selectedFolderId);
-            const matchesTag = selectedTag === 'all' || (prompt.tags && prompt.tags.includes(selectedTag));
-
-            return matchesSearch && matchesFilter && matchesFolder && matchesTag;
+        const query = search.trim().toLowerCase();
+        const visible = prompts.filter((p) => {
+            const matchesSearch =
+                !query ||
+                p.title.toLowerCase().includes(query) ||
+                p.content.toLowerCase().includes(query) ||
+                (p.tags || []).some((t) => t.toLowerCase().includes(query));
+            const matchesPlatform = platformFilter === 'all' || p.platform === platformFilter;
+            const matchesFolder =
+                selectedFolderId === 'all' ||
+                (selectedFolderId === 'uncategorized' ? !p.folderId : p.folderId === selectedFolderId);
+            const matchesTag = selectedTag === 'all' || (p.tags || []).includes(selectedTag);
+            const matchesFocus =
+                focusFilter === 'all' ||
+                (focusFilter === 'recent' && new Date(p.createdAt || 0).getTime() >= sevenDaysAgo) ||
+                (focusFilter === 'untagged' && (!p.tags || p.tags.length === 0));
+            return matchesSearch && matchesPlatform && matchesFolder && matchesTag && matchesFocus;
         });
-    }, [prompts, search, filter, selectedFolderId, selectedTag]);
 
-    const totalPages = Math.ceil(filteredPrompts.length / ITEMS_PER_PAGE);
+        return visible.sort((a, b) => {
+            if (sortBy === 'title') return a.title.localeCompare(b.title);
+            if (sortBy === 'oldest') return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+            if (sortBy === 'most-tags') return (b.tags?.length || 0) - (a.tags?.length || 0);
+            return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+        });
+    }, [prompts, search, platformFilter, selectedFolderId, selectedTag, focusFilter, sortBy, sevenDaysAgo]);
+
+    const totalPages = Math.max(1, Math.ceil(filteredPrompts.length / ITEMS_PER_PAGE));
+    const safePage = Math.min(currentPage, totalPages);
 
     const paginatedPrompts = useMemo(() => {
-        const start = (currentPage - 1) * ITEMS_PER_PAGE;
+        const start = (safePage - 1) * ITEMS_PER_PAGE;
         return filteredPrompts.slice(start, start + ITEMS_PER_PAGE);
-    }, [filteredPrompts, currentPage]);
+    }, [filteredPrompts, safePage]);
 
-    React.useEffect(() => {
+    const resetFilters = () => {
+        setSearch('');
+        setPlatformFilter('all');
+        setFocusFilter('all');
+        setSelectedFolderId('all');
+        setSelectedTag('all');
+        setSortBy('newest');
         setCurrentPage(1);
-    }, [search, filter, selectedFolderId, selectedTag]);
+    };
 
     const handleCreateFolder = (event) => {
         event.preventDefault();
-        if (!newFolderName.trim()) return;
-
-        createFolder(newFolderName.trim());
+        const name = newFolderName.trim();
+        if (!name) return;
+        createFolder(name);
         setNewFolderName('');
-        setIsCreatingFolder(false);
-        toast.success(`Folder "${newFolderName.trim()}" created`);
+        setShowCreateFolder(false);
+        toast.success(`Folder "${name}" created`);
     };
 
     const handleDeletePrompt = async (id) => {
-        const prompt = prompts.find((item) => item.id === id);
+        const prompt = prompts.find((p) => p.id === id);
         const confirmed = await confirm({
             title: 'Delete Prompt',
-            message: `Are you sure you want to delete "${prompt?.title}"? This action cannot be undone.`,
+            message: `Delete "${prompt?.title}"? This action cannot be undone.`,
             confirmText: 'Delete',
-            variant: 'danger'
+            variant: 'danger',
         });
+        if (!confirmed) return;
+        deletePrompt(id);
+        toast.success('Prompt deleted');
+    };
 
-        if (confirmed) {
-            deletePrompt(id);
-            toast.success('Prompt deleted');
+    const handleCopyPrompt = async (prompt) => {
+        try {
+            await navigator.clipboard.writeText(prompt.content || '');
+            toast.success(`Copied "${prompt.title}"`);
+        } catch {
+            toast.error('Failed to copy');
         }
     };
 
-    const handleDeleteFolder = async (folderId) => {
-        const folder = folders.find((item) => item.id === folderId);
-        const promptCount = prompts.filter((prompt) => prompt.folderId === folderId).length;
-
-        const confirmed = await confirm({
-            title: 'Delete Folder',
-            message: `Are you sure you want to delete "${folder?.name}"? ${promptCount > 0 ? `${promptCount} prompt(s) will be moved to Uncategorized.` : ''} This action cannot be undone.`,
-            confirmText: 'Delete',
-            variant: 'danger'
-        });
-
-        if (confirmed) {
-            deleteFolder(folderId);
-            if (selectedFolderId === folderId) {
-                setSelectedFolderId('all');
-            }
-            toast.success('Folder deleted');
-        }
-    };
+    const focusFilters = [
+        { id: 'all', label: 'All', count: prompts.length, icon: FolderOpen },
+        { id: 'recent', label: 'Recent', count: recentCount, icon: Clock3 },
+        { id: 'untagged', label: 'Untagged', count: untaggedCount, icon: AlertCircle },
+    ];
 
     return (
-        <div className="space-y-8">
-            <section className="glass-panel p-6 md:p-7">
-                <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold text-text-main">My Prompt Library</h1>
-                        <p className="mt-2 text-text-secondary max-w-3xl">
-                            Library is personal. Keep your working prompts here, organized by your folders and tags. Use Templates for recommended starters.
-                        </p>
-                    </div>
-
-                    <div className="flex gap-3 flex-wrap">
-                        <Link to="/templates" className="glass-button inline-flex items-center gap-2">
-                            <Layers3 size={16} />
-                            Browse Templates
-                        </Link>
-                        <Link to="/new" className="btn-primary inline-flex items-center gap-2">
-                            <Plus size={16} />
-                            New Prompt
-                        </Link>
-                    </div>
+        <div className="space-y-6 pt-4 pb-8">
+            {/* Page header */}
+            <div className="flex items-start justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight">Library</h1>
+                    <p className="text-sm text-text-secondary mt-1">
+                        {prompts.length === 0
+                            ? 'Your prompt collection lives here'
+                            : `${prompts.length} prompt${prompts.length !== 1 ? 's' : ''}${recentCount > 0 ? ` · ${recentCount} added this week` : ''}`}
+                    </p>
                 </div>
-
-                <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-xl border border-border bg-surface-highlight p-4">
-                        <p className="text-sm text-text-secondary">Personal prompts</p>
-                        <p className="mt-1 text-2xl font-bold text-text-main">{prompts.length}</p>
-                    </div>
-                    <div className="rounded-xl border border-border bg-surface-highlight p-4">
-                        <p className="text-sm text-text-secondary">Folders</p>
-                        <p className="mt-1 text-2xl font-bold text-text-main">{folders.length}</p>
-                    </div>
-                    <div className="rounded-xl border border-border bg-surface-highlight p-4">
-                        <p className="text-sm text-text-secondary">Active tags</p>
-                        <p className="mt-1 text-2xl font-bold text-text-main">{allTags.length}</p>
-                    </div>
+                <div className="flex items-center gap-2 shrink-0">
+                    <Link to="/templates" className="btn-secondary !py-2 !text-xs">
+                        <Layers3 size={13} />
+                        Templates
+                    </Link>
+                    <Link to="/new" className="btn-primary !py-2 !text-xs">
+                        <Plus size={13} />
+                        New Prompt
+                    </Link>
                 </div>
-            </section>
+            </div>
 
-            <div className="flex flex-col gap-8 md:flex-row">
-                <div className="flex-1">
-                    <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                        <div className="relative lg:w-72">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none z-10" size={18} />
-                            <input
-                                type="text"
-                                placeholder="Search prompts..."
-                                value={search}
-                                onChange={(event) => setSearch(event.target.value)}
-                                className="glass-input-with-icon"
-                            />
-                        </div>
-
-                        <div className="relative w-full lg:w-auto lg:min-w-52">
-                            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none z-10" size={18} />
-                            <select
-                                value={filter}
-                                onChange={(event) => setFilter(event.target.value)}
-                                className="glass-input-with-icon appearance-none cursor-pointer"
-                                style={{ paddingRight: '2rem' }}
-                            >
-                                {allPlatforms.map((platform) => (
-                                    <option key={platform} value={platform}>
-                                        {platform === 'All' ? 'All Platforms' : platform}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </header>
-
-                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
-                        {paginatedPrompts.map((prompt) => (
-                            <PromptCard
-                                key={prompt.id}
-                                prompt={prompt}
-                                onDelete={handleDeletePrompt}
-                                onUpdate={updatePrompt}
-                            />
-                        ))}
-
-                        {filteredPrompts.length === 0 && (
-                            <div className="col-span-full py-20 text-center glass-panel border-dashed">
-                                <Sparkles size={28} className="mx-auto text-text-secondary" />
-                                <h3 className="mt-4 text-lg font-medium text-text-main">No prompts in this view</h3>
-                                <p className="mt-2 text-text-secondary">Start from scratch or pull in a recommended template.</p>
-                                <div className="mt-5 flex items-center justify-center gap-3 flex-wrap">
-                                    <Link to="/new" className="btn-primary inline-flex items-center gap-2">
-                                        <Plus size={16} />
-                                        New Prompt
-                                    </Link>
-                                    <Link to="/templates" className="glass-button inline-flex items-center gap-2">
-                                        <Layers3 size={16} />
-                                        Use Templates
-                                    </Link>
-                                </div>
-                            </div>
-                        )}
+            {/* Search + filters */}
+            <div className="space-y-2.5">
+                {/* Search row */}
+                <div className="flex gap-2">
+                    <div className="relative flex-1">
+                        <Search
+                            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary"
+                            size={15}
+                        />
+                        <input
+                            data-global-search="library"
+                            type="text"
+                            placeholder="Search by title, content, or tag…"
+                            value={search}
+                            onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                            className="glass-input pl-9 !py-2 !text-sm"
+                        />
                     </div>
-
-                    {totalPages > 1 && (
-                        <div className="mt-8 flex items-center justify-center gap-2">
-                            <button
-                                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                                disabled={currentPage === 1}
-                                className="glass-button p-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                aria-label="Previous page"
-                            >
-                                <ChevronLeft size={18} />
-                            </button>
-
-                            <div className="flex gap-1">
-                                {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
-                                    <button
-                                        key={page}
-                                        onClick={() => setCurrentPage(page)}
-                                        className={clsx(
-                                            'w-8 h-8 rounded-lg text-sm font-medium transition-colors',
-                                            currentPage === page ? 'bg-primary text-white' : 'glass-button'
-                                        )}
-                                    >
-                                        {page}
-                                    </button>
-                                ))}
-                            </div>
-
-                            <button
-                                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                                disabled={currentPage === totalPages}
-                                className="glass-button p-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                aria-label="Next page"
-                            >
-                                <ChevronRight size={18} />
-                            </button>
-
-                            <span className="ml-2 text-sm text-text-secondary">
-                                {filteredPrompts.length} prompt{filteredPrompts.length !== 1 ? 's' : ''}
-                            </span>
-                        </div>
+                    {hasActiveFilters && (
+                        <button
+                            onClick={resetFilters}
+                            className="glass-button !py-2 !text-xs whitespace-nowrap"
+                        >
+                            <FilterX size={13} />
+                            Clear
+                        </button>
                     )}
                 </div>
 
-                <aside className="w-full md:w-64 flex-shrink-0 space-y-6">
-                    <div className="glass-panel p-4">
-                        <div className="mb-4 flex items-center justify-between">
-                            <h2 className="text-lg font-bold text-text-main flex items-center gap-2">
-                                <Folder size={18} className="text-primary" />
-                                Folders
-                            </h2>
-                            <button
-                                onClick={() => setIsCreatingFolder(!isCreatingFolder)}
-                                className="p-1 hover:bg-surface-highlight rounded text-text-secondary hover:text-primary transition-colors"
-                            >
-                                <Plus size={16} />
-                            </button>
-                        </div>
+                {/* Focus pills + filter selects */}
+                <div className="flex flex-wrap items-center gap-2">
+                    {focusFilters.map((f) => (
+                        <button
+                            key={f.id}
+                            onClick={() => { setFocusFilter(f.id); setCurrentPage(1); }}
+                            className={clsx(
+                                'flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition-all',
+                                focusFilter === f.id
+                                    ? 'border-primary/30 bg-primary/8 text-primary'
+                                    : 'border-border text-text-secondary hover:text-text-main hover:border-primary/20'
+                            )}
+                        >
+                            <f.icon size={11} />
+                            {f.label}
+                            <span className={clsx(
+                                'rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums',
+                                focusFilter === f.id ? 'bg-primary/15' : 'bg-surface-highlight'
+                            )}>
+                                {f.count}
+                            </span>
+                        </button>
+                    ))}
 
-                        {isCreatingFolder && (
-                            <form onSubmit={handleCreateFolder} className="mb-4">
-                                <input
-                                    type="text"
-                                    autoFocus
-                                    value={newFolderName}
-                                    onChange={(event) => setNewFolderName(event.target.value)}
-                                    placeholder="Folder name..."
-                                    className="glass-input text-sm py-1 px-2 mb-2"
-                                />
-                                <div className="flex gap-2">
-                                    <button type="submit" className="text-xs bg-primary text-white px-2 py-1 rounded">Add</button>
-                                    <button type="button" onClick={() => setIsCreatingFolder(false)} className="text-xs text-text-secondary px-2 py-1">Cancel</button>
-                                </div>
-                            </form>
+                    <div className="ml-auto flex flex-wrap gap-1.5">
+                        {allPlatforms.length > 0 && (
+                            <FilterSelect
+                                value={platformFilter}
+                                onChange={(e) => { setPlatformFilter(e.target.value); setCurrentPage(1); }}
+                            >
+                                <option value="all">Platform</option>
+                                {allPlatforms.map((p) => <option key={p} value={p}>{p}</option>)}
+                            </FilterSelect>
                         )}
-
-                        <nav className="space-y-1 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
-                            <button
-                                onClick={() => {
-                                    setSelectedFolderId('all');
-                                    setSelectedTag('all');
-                                }}
-                                className={clsx(
-                                    'w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between',
-                                    selectedFolderId === 'all'
-                                        ? 'bg-primary/10 text-primary'
-                                        : 'text-text-secondary hover:text-text-main hover:bg-surface-highlight'
-                                )}
+                        <FilterSelect
+                            value={selectedFolderId}
+                            onChange={(e) => { setSelectedFolderId(e.target.value); setCurrentPage(1); }}
+                        >
+                            <option value="all">Folder</option>
+                            <option value="uncategorized">Uncategorized</option>
+                            {folders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+                        </FilterSelect>
+                        {allTags.length > 0 && (
+                            <FilterSelect
+                                value={selectedTag}
+                                onChange={(e) => { setSelectedTag(e.target.value); setCurrentPage(1); }}
                             >
-                                All Prompts
-                                <span className="text-xs opacity-60">{prompts.length}</span>
-                            </button>
-
-                            <button
-                                onClick={() => setSelectedFolderId('uncategorized')}
-                                className={clsx(
-                                    'w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between',
-                                    selectedFolderId === 'uncategorized'
-                                        ? 'bg-primary/10 text-primary'
-                                        : 'text-text-secondary hover:text-text-main hover:bg-surface-highlight'
-                                )}
-                            >
-                                Uncategorized
-                                <span className="text-xs opacity-60">{prompts.filter((prompt) => !prompt.folderId).length}</span>
-                            </button>
-
-                            {folders?.map((folder) => (
-                                <div key={folder.id} className="group relative">
-                                    <button
-                                        onClick={() => setSelectedFolderId(folder.id)}
-                                        className={clsx(
-                                            'w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between',
-                                            selectedFolderId === folder.id
-                                                ? 'bg-primary/10 text-primary'
-                                                : 'text-text-secondary hover:text-text-main hover:bg-surface-highlight'
-                                        )}
-                                    >
-                                        <span className="truncate">{folder.name}</span>
-                                        <span className="text-xs opacity-60">{prompts.filter((prompt) => prompt.folderId === folder.id).length}</span>
-                                    </button>
-                                    <button
-                                        onClick={(event) => {
-                                            event.stopPropagation();
-                                            handleDeleteFolder(folder.id);
-                                        }}
-                                        className="absolute right-8 top-1/2 -translate-y-1/2 p-1 text-text-secondary hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                        title="Delete folder"
-                                        aria-label={`Delete folder ${folder.name}`}
-                                    >
-                                        <Trash2 size={12} />
-                                    </button>
-                                </div>
-                            ))}
-                        </nav>
+                                <option value="all">Tag</option>
+                                {allTags.map((t) => <option key={t} value={t}>#{t}</option>)}
+                            </FilterSelect>
+                        )}
+                        <FilterSelect
+                            value={sortBy}
+                            onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1); }}
+                        >
+                            <option value="newest">Newest</option>
+                            <option value="oldest">Oldest</option>
+                            <option value="title">A–Z</option>
+                            <option value="most-tags">Most Tags</option>
+                        </FilterSelect>
                     </div>
+                </div>
 
-                    <div className="glass-panel p-4">
-                        <h2 className="text-lg font-bold text-text-main flex items-center gap-2 mb-4">
-                            <Tag size={18} className="text-primary" />
-                            Tags
-                        </h2>
-
-                        <div className="space-y-1 max-h-[30vh] overflow-y-auto pr-2 custom-scrollbar">
-                            <button
-                                onClick={() => setSelectedTag('all')}
-                                className={clsx(
-                                    'w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2',
-                                    selectedTag === 'all'
-                                        ? 'bg-primary/10 text-primary'
-                                        : 'text-text-secondary hover:text-text-main hover:bg-surface-highlight'
-                                )}
-                            >
-                                <Hash size={14} />
-                                All Tags
+                {/* Folder creation */}
+                <div>
+                    {!showCreateFolder ? (
+                        <button
+                            onClick={() => setShowCreateFolder(true)}
+                            className="flex items-center gap-1 text-xs text-text-secondary hover:text-text-main transition-colors"
+                        >
+                            <Plus size={11} />
+                            New folder
+                        </button>
+                    ) : (
+                        <form onSubmit={handleCreateFolder} className="flex items-center gap-2">
+                            <input
+                                type="text"
+                                autoFocus
+                                value={newFolderName}
+                                onChange={(e) => setNewFolderName(e.target.value)}
+                                placeholder="Folder name"
+                                className="glass-input !py-1 !px-2.5 !text-xs !w-36"
+                            />
+                            <button type="submit" className="text-xs font-medium text-primary hover:text-primary/80 transition-colors">
+                                Save
                             </button>
-
-                            {allTags.map((tag) => (
-                                <button
-                                    key={tag}
-                                    onClick={() => setSelectedTag(tag)}
-                                    className={clsx(
-                                        'w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between group',
-                                        selectedTag === tag
-                                            ? 'bg-primary/10 text-primary'
-                                            : 'text-text-secondary hover:text-text-main hover:bg-surface-highlight'
-                                    )}
-                                >
-                                    <span className="truncate">#{tag}</span>
-                                    <span className="text-xs opacity-0 group-hover:opacity-60 transition-opacity">
-                                        {prompts.filter((prompt) => prompt.tags?.includes(tag)).length}
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </aside>
+                            <button
+                                type="button"
+                                onClick={() => { setShowCreateFolder(false); setNewFolderName(''); }}
+                                className="text-xs text-text-secondary hover:text-text-main transition-colors"
+                            >
+                                Cancel
+                            </button>
+                        </form>
+                    )}
+                </div>
             </div>
+
+            {/* Content area */}
+            {prompts.length === 0 ? (
+                <div className="glass-panel py-16 text-center border-dashed">
+                    <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                        <Sparkles size={22} className="text-primary" />
+                    </div>
+                    <h2 className="text-lg font-semibold mb-2">Start with your first prompt</h2>
+                    <p className="text-sm text-text-secondary mb-6 max-w-xs mx-auto">
+                        Write a prompt, add variables, and test it across multiple models.
+                    </p>
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                        <Link to="/new" className="btn-primary">
+                            <Plus size={14} />
+                            New Prompt
+                        </Link>
+                        <Link to="/templates" className="btn-secondary">
+                            <Layers3 size={14} />
+                            Browse Templates
+                        </Link>
+                    </div>
+                </div>
+            ) : filteredPrompts.length === 0 ? (
+                <div className="glass-panel py-14 text-center border-dashed">
+                    <p className="text-sm text-text-secondary mb-3">No prompts match these filters</p>
+                    <button onClick={resetFilters} className="btn-secondary !py-2 !text-xs">
+                        <FilterX size={13} />
+                        Reset filters
+                    </button>
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    <p className="text-xs text-text-secondary">
+                        {filteredPrompts.length} result{filteredPrompts.length !== 1 ? 's' : ''}
+                        {totalPages > 1 && ` · page ${safePage} of ${totalPages}`}
+                    </p>
+
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        {paginatedPrompts.map((prompt) => (
+                            <PromptRow
+                                key={prompt.id}
+                                prompt={prompt}
+                                folderName={prompt.folderId ? folderNameById[prompt.folderId] : null}
+                                onDelete={handleDeletePrompt}
+                                onCopy={handleCopyPrompt}
+                            />
+                        ))}
+                    </div>
+
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-center gap-2 pt-2">
+                            <button
+                                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                disabled={safePage === 1}
+                                className="glass-button !px-3 !py-2 !text-xs disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                                <ChevronLeft size={14} />
+                                Prev
+                            </button>
+                            <span className="text-xs text-text-secondary tabular-nums px-2">
+                                {safePage} / {totalPages}
+                            </span>
+                            <button
+                                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                                disabled={safePage === totalPages}
+                                className="glass-button !px-3 !py-2 !text-xs disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                                Next
+                                <ChevronRight size={14} />
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

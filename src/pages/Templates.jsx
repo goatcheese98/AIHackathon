@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useStore } from '../hooks/useStore';
 import { useToast } from '../components/Toast';
-import { ArrowRight, CopyPlus, Hash, Search, Sparkles } from 'lucide-react';
+import { CopyPlus, Hash, Search, Sparkles } from 'lucide-react';
 import { clsx } from 'clsx';
 
 export function Templates() {
@@ -15,24 +15,14 @@ export function Templates() {
 
     const filteredTemplates = useMemo(() => {
         return templates.filter((template) => {
-            const matchesSearch = template.title.toLowerCase().includes(search.toLowerCase()) ||
+            const matchesSearch =
+                template.title.toLowerCase().includes(search.toLowerCase()) ||
                 template.content.toLowerCase().includes(search.toLowerCase()) ||
                 (template.tags || []).some((tag) => tag.toLowerCase().includes(search.toLowerCase()));
-
             const matchesCategory = selectedCategoryId === 'all' || template.categoryId === selectedCategoryId;
-
             return matchesSearch && matchesCategory;
         });
     }, [templates, search, selectedCategoryId]);
-
-    const groupedTemplates = useMemo(() => {
-        return filteredTemplates.reduce((acc, template) => {
-            const category = template.categoryId || 'uncategorized';
-            if (!acc[category]) acc[category] = [];
-            acc[category].push(template);
-            return acc;
-        }, {});
-    }, [filteredTemplates]);
 
     const handleUseTemplate = (templateId) => {
         const createdPrompt = addPromptFromTemplate(templateId);
@@ -40,118 +30,112 @@ export function Templates() {
             toast.error('Template not found');
             return;
         }
-
-        toast.success('Template added to your library');
+        toast.success('Template added to library');
         navigate(`/edit/${createdPrompt.id}`);
     };
 
     return (
-        <div className="space-y-8">
-            <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold text-text-main">Recommended Templates</h1>
-                    <p className="mt-2 max-w-3xl text-text-secondary">
-                        Templates are starter patterns. Add any template to your personal Library, then customize it for your own workflows.
-                    </p>
+        <div className="space-y-5 pt-4 pb-8">
+            {/* Page header */}
+            <div>
+                <h1 className="text-2xl font-bold tracking-tight">Templates</h1>
+                <p className="text-sm text-text-secondary mt-1">
+                    Ready-to-use prompts to get you started quickly
+                </p>
+            </div>
+
+            {/* Search + category filter */}
+            <div className="space-y-2.5">
+                <div className="relative">
+                    <Search
+                        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary"
+                        size={15}
+                    />
+                    <input
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Search templates…"
+                        className="glass-input !pl-9 !py-2 !text-sm"
+                    />
                 </div>
 
-                <Link to="/app" className="glass-button inline-flex items-center gap-2 w-fit">
-                    Go to My Library
-                    <ArrowRight size={16} />
-                </Link>
-            </header>
-
-            <section className="glass-panel p-5 md:p-6 space-y-4">
-                <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={18} />
-                        <input
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Search templates by title, tags, or content..."
-                            className="glass-input-with-icon"
-                        />
-                    </div>
-
-                    <div className="flex gap-2 flex-wrap">
-                        <button
-                            onClick={() => setSelectedCategoryId('all')}
-                            className={clsx(
-                                'px-3 py-1.5 rounded-lg text-sm border transition-colors',
-                                selectedCategoryId === 'all'
-                                    ? 'bg-primary text-white border-primary'
-                                    : 'border-border text-text-secondary hover:text-text-main hover:bg-surface-highlight'
-                            )}
-                        >
-                            All
-                        </button>
-                        {templateCategories.map((category) => (
+                <div className="flex flex-wrap gap-1.5">
+                    <button
+                        onClick={() => setSelectedCategoryId('all')}
+                        className={clsx(
+                            'rounded-xl border px-3 py-1.5 text-xs font-medium transition-all',
+                            selectedCategoryId === 'all'
+                                ? 'border-primary/30 bg-primary/8 text-primary'
+                                : 'border-border text-text-secondary hover:text-text-main hover:border-primary/20'
+                        )}
+                    >
+                        All ({templates.length})
+                    </button>
+                    {templateCategories.map((cat) => {
+                        const count = templates.filter((t) => t.categoryId === cat.id).length;
+                        return (
                             <button
-                                key={category.id}
-                                onClick={() => setSelectedCategoryId(category.id)}
+                                key={cat.id}
+                                onClick={() => setSelectedCategoryId(cat.id)}
                                 className={clsx(
-                                    'px-3 py-1.5 rounded-lg text-sm border transition-colors',
-                                    selectedCategoryId === category.id
-                                        ? 'bg-primary text-white border-primary'
-                                        : 'border-border text-text-secondary hover:text-text-main hover:bg-surface-highlight'
+                                    'rounded-xl border px-3 py-1.5 text-xs font-medium transition-all',
+                                    selectedCategoryId === cat.id
+                                        ? 'border-primary/30 bg-primary/8 text-primary'
+                                        : 'border-border text-text-secondary hover:text-text-main hover:border-primary/20'
                                 )}
                             >
-                                {category.name}
+                                {cat.name} ({count})
                             </button>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {filteredTemplates.length === 0 ? (
-                <div className="glass-panel p-10 text-center">
-                    <Sparkles size={30} className="mx-auto text-text-secondary" />
-                    <h3 className="mt-4 text-lg font-semibold text-text-main">No templates match your filters</h3>
-                    <p className="mt-2 text-text-secondary">Try a different search or category.</p>
-                </div>
-            ) : (
-                <div className="space-y-6 pb-8">
-                    {Object.entries(groupedTemplates).map(([categoryId, categoryTemplates]) => {
-                        const categoryName = templateCategories.find((category) => category.id === categoryId)?.name || 'Uncategorized';
-
-                        return (
-                            <section key={categoryId} className="space-y-3">
-                                <h2 className="text-lg font-semibold text-text-main">{categoryName}</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                                    {categoryTemplates.map((template) => (
-                                        <article key={template.id} className="glass-panel p-5 flex flex-col">
-                                            <div className="flex items-start justify-between gap-3">
-                                                <h3 className="text-lg font-semibold text-text-main">{template.title}</h3>
-                                                <span className="text-xs text-text-secondary rounded-full border border-border px-2 py-1 whitespace-nowrap">
-                                                    {template.platform}
-                                                </span>
-                                            </div>
-
-                                            <p className="mt-3 text-sm text-text-secondary line-clamp-4 font-mono leading-relaxed">
-                                                {template.content}
-                                            </p>
-
-                                            <div className="mt-4 flex flex-wrap gap-2">
-                                                {(template.tags || []).slice(0, 4).map((tag) => (
-                                                    <span key={tag} className="text-xs rounded-full bg-primary/10 text-primary px-2 py-1 inline-flex items-center gap-1">
-                                                        <Hash size={11} /> {tag}
-                                                    </span>
-                                                ))}
-                                            </div>
-
-                                            <button
-                                                onClick={() => handleUseTemplate(template.id)}
-                                                className="mt-5 btn-primary inline-flex items-center justify-center gap-2"
-                                            >
-                                                <CopyPlus size={16} />
-                                                Add to Library
-                                            </button>
-                                        </article>
-                                    ))}
-                                </div>
-                            </section>
                         );
                     })}
+                </div>
+            </div>
+
+            {/* Template grid */}
+            {filteredTemplates.length === 0 ? (
+                <div className="glass-panel py-14 text-center border-dashed">
+                    <Sparkles size={24} className="mx-auto text-text-secondary mb-3" />
+                    <p className="text-sm font-medium text-text-main mb-1">No templates found</p>
+                    <p className="text-xs text-text-secondary">Try a different search or category</p>
+                </div>
+            ) : (
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    {filteredTemplates.map((template) => (
+                        <article key={template.id} className="glass-panel flex flex-col p-4 transition-all hover:border-primary/20">
+                            <div className="flex items-start justify-between gap-2 mb-3">
+                                <h3 className="font-semibold text-text-main leading-snug">{template.title}</h3>
+                                <span className="shrink-0 rounded-lg border border-border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-text-secondary">
+                                    {template.platform}
+                                </span>
+                            </div>
+
+                            <p className="font-mono text-xs text-text-secondary/80 bg-surface-highlight/60 rounded-lg px-3 py-2.5 line-clamp-4 flex-1 leading-relaxed mb-3">
+                                {template.content}
+                            </p>
+
+                            {(template.tags || []).length > 0 && (
+                                <div className="flex flex-wrap gap-1 mb-3">
+                                    {(template.tags || []).slice(0, 5).map((tag) => (
+                                        <span
+                                            key={tag}
+                                            className="inline-flex items-center gap-0.5 rounded-full bg-primary/8 px-2 py-0.5 text-[11px] font-medium text-primary"
+                                        >
+                                            <Hash size={9} />
+                                            {tag}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+
+                            <button
+                                onClick={() => handleUseTemplate(template.id)}
+                                className="btn-primary w-full justify-center !py-2 !text-xs !rounded-lg"
+                            >
+                                <CopyPlus size={12} />
+                                Use Template
+                            </button>
+                        </article>
+                    ))}
                 </div>
             )}
         </div>

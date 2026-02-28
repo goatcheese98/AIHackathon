@@ -59,13 +59,13 @@ export function Home() {
         >
             <div className="pointer-events-none absolute inset-0 landing-grid-bg" />
             <div className="pointer-events-none absolute inset-0 landing-grid-reactive" />
-            <div className="pointer-events-none absolute left-[-10rem] top-[-10rem] h-[25rem] w-[25rem] rounded-full bg-cyan-500/20 blur-[120px]" />
-            <div className="pointer-events-none absolute right-[-8rem] top-[6rem] h-[20rem] w-[20rem] rounded-full bg-blue-500/15 blur-[110px]" />
+            <div className="pointer-events-none absolute left-[-10rem] top-[-10rem] h-[25rem] w-[25rem] rounded-full bg-primary/20 blur-[120px]" />
+            <div className="pointer-events-none absolute right-[-8rem] top-[6rem] h-[20rem] w-[20rem] rounded-full bg-accent/20 blur-[110px]" />
 
-            <section className="relative z-10 mx-auto grid w-full max-w-6xl gap-10 px-6 pb-16 pt-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+            <section className="relative z-10 mx-auto grid w-full max-w-6xl gap-8 px-6 pb-12 pt-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
                 <div className="space-y-7">
                     <p className="landing-mono inline-flex items-center gap-2 rounded-full border border-border bg-surface/80 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.18em] text-text-secondary backdrop-blur">
-                        <Sparkles size={14} className="text-cyan-500" />
+                        <Sparkles size={14} className="text-primary" />
                         Simple Prompt Workspace
                     </p>
 
@@ -81,14 +81,14 @@ export function Home() {
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                         <Link
                             to="/app"
-                            className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-7 py-3.5 font-semibold text-white shadow-lg shadow-cyan-500/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-cyan-500/45"
+                            className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-accent px-7 py-3.5 font-semibold text-white shadow-lg shadow-primary/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-primary/45"
                         >
                             Open PromptFolio
                             <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
                         </Link>
                         <Link
                             to="/new"
-                            className="inline-flex items-center justify-center rounded-xl border border-border bg-surface/85 px-7 py-3.5 font-medium text-text-main backdrop-blur transition-colors hover:bg-surface-highlight"
+                            className="btn-secondary"
                         >
                             Create First Prompt
                         </Link>
@@ -99,7 +99,7 @@ export function Home() {
                     </p>
                 </div>
 
-                <div className="rounded-3xl border border-border bg-surface/90 p-6 shadow-xl shadow-cyan-950/10 backdrop-blur-xl">
+                <div className="rounded-3xl border border-border bg-surface/90 p-6 shadow-xl shadow-primary/10 backdrop-blur-xl">
                     <div className="flex items-center justify-between border-b border-border pb-4">
                         <h2 className="landing-display text-xl">Your First 5 Minutes</h2>
                         <span className="landing-mono rounded-full bg-emerald-500/15 px-2.5 py-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
@@ -110,7 +110,7 @@ export function Home() {
                     <ol className="mt-4 space-y-3.5">
                         {quickStart.map((item, idx) => (
                             <li key={item.title} className="rounded-xl border border-border bg-background/70 p-4">
-                                <p className="landing-mono text-xs uppercase tracking-[0.16em] text-cyan-600 dark:text-cyan-400">
+                                <p className="landing-mono text-xs uppercase tracking-[0.16em] text-primary">
                                     Step {idx + 1}
                                 </p>
                                 <p className="landing-display mt-1.5 text-lg">{item.title}</p>
@@ -121,7 +121,7 @@ export function Home() {
                 </div>
             </section>
 
-            <section className="relative z-10 mx-auto w-full max-w-6xl px-6 py-10">
+            <section className="relative z-10 mx-auto w-full max-w-6xl px-6 py-8">
                 <div className="mb-7">
                     <p className="landing-mono text-xs uppercase tracking-[0.2em] text-text-secondary">Core Workflow</p>
                     <h2 className="landing-display mt-2 text-4xl md:text-[2.7rem]">Everything important, nothing overwhelming.</h2>
@@ -130,7 +130,7 @@ export function Home() {
                 <div className="grid gap-4 md:grid-cols-3">
                     {workflowCards.map((item) => (
                         <article key={item.title} className="rounded-2xl border border-border bg-surface/75 p-6 backdrop-blur">
-                            <div className="mb-4 inline-flex rounded-xl bg-cyan-500/15 p-2 text-cyan-600 dark:text-cyan-400">
+                            <div className="mb-4 inline-flex rounded-xl bg-primary/15 p-2 text-primary">
                                 <item.icon size={20} />
                             </div>
                             <h3 className="landing-display text-2xl">{item.title}</h3>
@@ -140,7 +140,7 @@ export function Home() {
                 </div>
             </section>
 
-            <section className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-24 pt-12">
+            <section className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-14 pt-10">
                 <div className="rounded-3xl border border-border bg-gradient-to-br from-surface to-background p-8 md:p-10">
                     <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
                         <div>

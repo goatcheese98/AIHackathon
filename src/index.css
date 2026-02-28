@@ -1,93 +1,116 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
   --color-background: var(--background);
   --color-surface: var(--surface);
+  --color-surface-strong: var(--surface-strong);
   --color-surface-highlight: var(--surface-highlight);
   --color-text-main: var(--text-main);
   --color-text-secondary: var(--text-secondary);
   --color-border: var(--border);
+  --color-brand: var(--brand);
+  --color-brand-soft: var(--brand-soft);
+  --color-accent: var(--accent);
 
-  --color-primary: #3b82f6;
-  /* Blue 500 */
-  --color-primary-hover: #2563eb;
-  /* Blue 600 */
-  --color-primary-light: #dbeafe;
-  /* Blue 100 */
+  --color-primary: var(--brand);
+  --color-primary-hover: color-mix(in oklab, var(--brand) 86%, black);
+  --color-primary-light: var(--brand-soft);
 
-  --font-sans: 'Inter', sans-serif;
+  --font-sans: "Manrope", sans-serif;
 
-  --shadow-soft: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  --shadow-soft: 0 22px 48px -30px rgba(13, 24, 41, 0.32);
+  --shadow-elevated: 0 24px 70px -36px rgba(15, 23, 42, 0.42);
 }
 
 @layer base {
   :root {
-    /* Light Mode (Default) */
-    --background: #f8fafc;
-    /* Slate 50 */
-    --surface: #ffffff;
-    --surface-highlight: #f1f5f9;
-    /* Slate 100 */
-    --text-main: #0f172a;
-    /* Slate 900 */
-    --text-secondary: #64748b;
-    /* Slate 500 */
-    --border: #e2e8f0;
-    /* Slate 200 */
+    --background: #f2f5fb;
+    --surface: color-mix(in oklab, #ffffff 94%, #dbe5f5);
+    --surface-strong: #ffffff;
+    --surface-highlight: color-mix(in oklab, #eff4ff 88%, #dde7f5);
+    --text-main: #111f35;
+    --text-secondary: #5f6f8a;
+    --border: #d6dfed;
+    --brand: #c2410c;
+    --brand-soft: color-mix(in oklab, #c2410c 12%, #ffffff);
+    --accent: #ea580c;
   }
 
   .dark {
-    /* Dark Mode */
-    --background: #0f172a;
-    /* Slate 900 */
-    --surface: #1e293b;
-    /* Slate 800 */
-    --surface-highlight: #334155;
-    /* Slate 700 */
-    --text-main: #f8fafc;
-    /* Slate 50 */
-    --text-secondary: #94a3b8;
-    /* Slate 400 */
-    --border: #334155;
-    /* Slate 700 */
+    --background: #0a1324;
+    --surface: color-mix(in oklab, #13233d 88%, black);
+    --surface-strong: #172942;
+    --surface-highlight: #203552;
+    --text-main: #e8f0ff;
+    --text-secondary: #9cb0cf;
+    --border: #294262;
+    --brand: #fb923c;
+    --brand-soft: color-mix(in oklab, #fb923c 22%, transparent);
+    --accent: #f97316;
   }
 
   body {
     @apply bg-background text-text-main antialiased transition-colors duration-300;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(52rem 30rem at -6% -12%, color-mix(in oklab, var(--brand) 12%, transparent) 0%, transparent 70%),
+      radial-gradient(44rem 26rem at 112% 14%, color-mix(in oklab, var(--accent) 10%, transparent) 0%, transparent 72%),
+      linear-gradient(to bottom right, color-mix(in oklab, var(--background) 90%, #dbeafe), var(--background));
+    background-attachment: fixed;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: "Space Grotesk", sans-serif;
+    letter-spacing: -0.03em;
+  }
+
+  code,
+  kbd,
+  pre {
+    font-family: "IBM Plex Mono", monospace;
   }
 }
 
 .glass-panel {
-  @apply bg-surface border border-border rounded-xl shadow-soft transition-all duration-300;
+  @apply rounded-2xl border border-border/80 bg-surface/88 backdrop-blur-xl transition-all duration-300;
+  box-shadow: var(--shadow-soft);
 }
 
 .glass-button {
-  @apply px-4 py-2 rounded-lg transition-all duration-200 font-medium;
-  @apply bg-surface hover:bg-surface-highlight border border-border text-text-secondary hover:text-text-main;
-  @apply active:scale-95;
+  @apply inline-flex items-center gap-2 rounded-xl border border-border bg-surface-strong/75 px-4 py-2.5 text-sm font-semibold text-text-secondary transition-all duration-200;
+  @apply hover:border-brand/30 hover:bg-surface-highlight hover:text-text-main;
 }
 
 .glass-input {
-  @apply bg-surface-highlight border border-border rounded-lg px-4 py-2 w-full text-text-main;
-  @apply focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary;
+  @apply w-full rounded-xl border border-border bg-surface-strong/85 px-4 py-2.5 text-text-main;
+  @apply focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/25;
   @apply placeholder-text-secondary/50 transition-all duration-200;
 }
 
 .glass-input-with-icon {
-  @apply bg-surface-highlight border border-border rounded-lg py-2 w-full text-text-main;
-  @apply focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary;
+  @apply w-full rounded-xl border border-border bg-surface-strong/85 py-2.5 text-text-main;
+  @apply focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/25;
   @apply placeholder-text-secondary/50 transition-all duration-200;
   padding-left: 2.75rem;
   padding-right: 1rem;
 }
 
 .btn-primary {
-  @apply bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-lg font-medium shadow-lg shadow-primary/30 transition-all duration-200 active:scale-95;
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-transparent px-6 py-2.5 text-sm font-semibold text-white transition-all duration-200;
+  background: linear-gradient(110deg, color-mix(in oklab, var(--brand) 84%, black), var(--brand), color-mix(in oklab, var(--accent) 70%, var(--brand)));
+  box-shadow: 0 16px 36px -22px color-mix(in oklab, var(--brand) 72%, #09111f);
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-surface-strong/80 px-6 py-2.5 text-sm font-semibold text-text-main transition-all duration-200;
+  @apply hover:bg-surface-highlight;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -95,19 +118,22 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-border rounded-full hover:bg-text-secondary transition-colors;
+  @apply rounded-full bg-border hover:bg-text-secondary transition-colors;
 }
 
-/* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideInFromTop {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(-9px);
   }
   to {
     opacity: 1;
@@ -118,17 +144,12 @@
 @keyframes slideInFromBottom {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
 }
 
 .animate-fade-in {
@@ -143,18 +164,15 @@
   animation: slideInFromBottom 0.2s ease-out;
 }
 
-/* Focus visible styles for accessibility */
 :focus-visible {
-  @apply outline-2 outline-offset-2 outline-primary;
+  @apply outline-2 outline-offset-2 outline-primary/70;
 }
 
-/* Skip to main content link for accessibility */
 .skip-link {
-  @apply absolute left-0 top-0 bg-primary text-white px-4 py-2 z-[1000] transform -translate-y-full;
+  @apply absolute left-0 top-0 z-[1000] -translate-y-full bg-primary px-4 py-2 text-white;
   @apply focus:translate-y-0 transition-transform;
 }
 
-/* Reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -165,7 +183,6 @@
   }
 }
 
-/* High contrast mode support */
 @media (prefers-contrast: high) {
   .glass-panel {
     @apply border-2;
@@ -177,12 +194,12 @@
 }
 
 .landing-display {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   letter-spacing: -0.03em;
 }
 
 .landing-mono {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: "IBM Plex Mono", monospace;
 }
 
 .landing-grid-bg {
@@ -201,8 +218,8 @@
   background:
     radial-gradient(
       280px circle at var(--mx, 50%) var(--my, 20%),
-      color-mix(in oklab, #22d3ee 35%, transparent) 0%,
-      color-mix(in oklab, #0ea5e9 25%, transparent) 35%,
+      color-mix(in oklab, var(--brand) 30%, transparent) 0%,
+      color-mix(in oklab, var(--accent) 24%, transparent) 35%,
       transparent 72%
     );
   mix-blend-mode: screen;
@@ -215,10 +232,30 @@
 }
 
 @keyframes landingFloat {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
 }
 
 .landing-float {
   animation: landingFloat 8s ease-in-out infinite;
+}
+
+.section-kicker {
+  @apply text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary;
+}
+
+.metric-tile {
+  @apply rounded-2xl border border-border bg-surface-strong/75 p-4;
+}
+
+/* Compact filter select used in Library page */
+.filter-select {
+  @apply rounded-xl border border-border bg-surface/85 px-2.5 py-1.5 text-xs text-text-secondary cursor-pointer transition-all;
+  @apply hover:border-primary/30 hover:text-text-main;
+  @apply focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20;
 }
